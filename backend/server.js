@@ -1,39 +1,35 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-const connectDB = require("./config/db"); // <-- Import added
+
+const connectDB = require("./config/db");
+const { connectRedis } = require("./config/redis");
 
 const app = express();
 
-// Connect to Database
-connectDB(); // <-- Function called
+// ─── Database Connections ────────────────────────────────────────────────────
+connectDB();      // MongoDB
+connectRedis();   // Redis (gracefully fails if Docker isn't running)
 
-// Middleware
+// ─── Middleware ──────────────────────────────────────────────────────────────
 app.use(cors());
 app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.send("LinkShift Backend API is running!");
-});
-
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-  console.log(`Server is successfully running on port ${PORT}`);
-});
-// ... existing code ...
-// Connect to Database
-connectDB(); // <-- Function called
-
-// Middleware
-app.use(cors());
-app.use(express.json());
-
-// --- ADD THIS NEW ROUTE ---
+// ─── Routes ──────────────────────────────────────────────────────────────────
+// POST /api/shorten  →  create a short URL
+// GET  /api/shorten  →  (extend later for listing, analytics, etc.)
 app.use("/api", require("./routes/url"));
-// --------------------------
 
-app.get("/", (req, res) => {
-  res.send("LinkShift Backend API is running!");
+// GET /:shortId  →  redirect to original URL  (must come AFTER /api routes)
+app.use("/", require("./routes/redirect"));
+
+// ─── Health check ────────────────────────────────────────────────────────────
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", message: "LinkShift API is running." });
 });
-// ... existing code ...
+
+// ─── Start ───────────────────────────────────────────────────────────────────
+const PORT = process.env.PORT || 8000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+});

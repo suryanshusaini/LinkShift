@@ -3,13 +3,11 @@ const cors = require("cors");
 require("dotenv").config();
 
 const connectDB = require("./config/db");
-const { connectRedis } = require("./config/redis");
 
 const app = express();
 
 // ─── Database Connections ────────────────────────────────────────────────────
-connectDB();      // MongoDB
-connectRedis();   // Redis (gracefully fails if Docker isn't running)
+connectDB();
 
 // ─── Middleware ──────────────────────────────────────────────────────────────
 app.use(cors());

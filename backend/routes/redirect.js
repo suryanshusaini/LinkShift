@@ -1,25 +1,29 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const Url = require('../models/Url');
+const Url = require("../models/Url");
 
-// The GET Route for Redirection (MongoDB only)
-router.get('/:shortId', async (req, res) => {
+// The GET Route for Redirection (MongoDB only, no Redis)
+router.get("/:shortId", async (req, res) => {
   try {
     const { shortId } = req.params;
+
+    // 1. Find the URL document in MongoDB
     const urlDoc = await Url.findOne({ shortId });
 
     if (urlDoc) {
-      // Increment click analytics and save
+      // 2. Increment the click analytics and save
       urlDoc.clicks++;
       await urlDoc.save();
-      // Redirect to the original URL
+
+      // 3. Perform the actual HTTP redirect to the long URL!
       return res.redirect(urlDoc.originalUrl);
     } else {
-      return res.status(404).json('No URL found');
+      // If the ID doesn't exist in the database
+      return res.status(404).json("No URL found");
     }
   } catch (err) {
     console.error(err);
-    res.status(500).json('Server error');
+    res.status(500).json("Server error");
   }
 });
 

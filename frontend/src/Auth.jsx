@@ -1,10 +1,13 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
-export default function Auth({ mode, setMode, onAuthSuccess }) {
+export default function Auth({ mode, setUser }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,8 +31,12 @@ export default function Auth({ mode, setMode, onAuthSuccess }) {
         throw new Error(data.message || "Authentication failed");
       }
 
-      // If successful, pass the data back to App.jsx
-      onAuthSuccess(data);
+      // FIX: Save both token and email to localStorage so they survive a refresh!
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("email", data.email);
+
+      setUser({ email: data.email });
+      navigate("/dashboard"); // Redirect to dashboard using React Router
     } catch (err) {
       setError(err.message);
     } finally {
@@ -40,7 +47,6 @@ export default function Auth({ mode, setMode, onAuthSuccess }) {
   return (
     <div className="max-w-md mx-auto mt-20 p-8 bg-white border border-slate-200 rounded-xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)]">
       <div className="flex justify-center mb-4">
-        {/* Simple geometric SVG logo placeholder */}
         <svg
           width="40"
           height="40"
@@ -88,6 +94,7 @@ export default function Auth({ mode, setMode, onAuthSuccess }) {
       )}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        {/* Email Input */}
         <div className="relative">
           <label className="block text-sm font-medium text-slate-700 mb-1">
             Email
@@ -116,6 +123,8 @@ export default function Auth({ mode, setMode, onAuthSuccess }) {
             />
           </div>
         </div>
+
+        {/* Password Input */}
         <div className="relative">
           <label className="block text-sm font-medium text-slate-700 mb-1">
             Password
@@ -183,12 +192,12 @@ export default function Auth({ mode, setMode, onAuthSuccess }) {
         {mode === "login"
           ? "Don't have an account? "
           : "Already have an account? "}
-        <button
-          onClick={() => setMode(mode === "login" ? "signup" : "login")}
+        <Link
+          to={mode === "login" ? "/signup" : "/login"}
           className="text-slate-900 font-semibold hover:underline"
         >
           {mode === "login" ? "Sign up" : "Log in"}
-        </button>
+        </Link>
       </div>
     </div>
   );

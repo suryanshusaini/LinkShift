@@ -38,5 +38,16 @@ router.post("/shorten", optionalAuth, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+router.get("/dashboard", optionalAuth, async (req, res) => {
+  if (!req.userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
 
+  try {
+    const urls = await Url.find({ userId: req.userId }).sort({ createdAt: -1 });
+    res.json(urls);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
 module.exports = router;

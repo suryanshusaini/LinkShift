@@ -5,7 +5,6 @@ function App() {
   const [longUrl, setLongUrl] = useState("");
   const [shortUrl, setShortUrl] = useState("");
 
-  // New states for authentication handling
   const [user, setUser] = useState(null);
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState("login");
@@ -13,11 +12,25 @@ function App() {
   const handleShorten = async (e) => {
     e.preventDefault();
     try {
+      // 1. Grab the token from localStorage
+      const token = localStorage.getItem("token");
+
+      // 2. Set up the basic headers
+      const headers = {
+        "Content-Type": "application/json",
+      };
+
+      // 3. If a token exists, attach it as a Bearer token
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
       const response = await fetch("http://localhost:8000/api/shorten", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: headers, // Pass the dynamic headers here
         body: JSON.stringify({ originalUrl: longUrl }),
       });
+
       const data = await response.json();
       setShortUrl(`http://localhost:8000/${data.shortId}`);
     } catch (error) {
@@ -25,16 +38,15 @@ function App() {
     }
   };
 
-  // Called from Auth.jsx when login/register succeeds
   const handleAuthSuccess = (data) => {
-    localStorage.setItem("token", data.token); // Save the JWT wristband
-    setUser({ email: data.email }); // Save user info in state
-    setShowAuth(false); // Close the auth screen
+    localStorage.setItem("token", data.token);
+    setUser({ email: data.email });
+    setShowAuth(false);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("token"); // Throw away the wristband
-    setUser(null); // Clear user state
+    localStorage.removeItem("token");
+    setUser(null);
   };
 
   return (

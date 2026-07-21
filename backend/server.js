@@ -16,6 +16,7 @@ app.use(express.json());
 // ─── Routes ──────────────────────────────────────────────────────────────────
 // POST /api/shorten  →  create a short URL
 // GET  /api/shorten  →  (extend later for listing, analytics, etc.)
+app.use("/api/auth", require("./routes/auth"));
 app.use("/api", require("./routes/url"));
 
 // GET /:shortId  →  redirect to original URL  (must come AFTER /api routes)

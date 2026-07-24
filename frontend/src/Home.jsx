@@ -1,4 +1,5 @@
 import { useState } from "react";
+import toast from "react-hot-toast"; // 1. Import toast
 
 export default function Home({ user }) {
   const [longUrl, setLongUrl] = useState("");
@@ -21,7 +22,14 @@ export default function Home({ user }) {
       setShortUrl(`http://localhost:8000/${data.shortId}`);
     } catch (error) {
       console.error("Error shortening URL:", error);
+      toast.error("Failed to shorten link"); // Optional: Add error toast!
     }
+  };
+
+  // 2. Create a handler function for copying
+  const handleCopy = () => {
+    navigator.clipboard.writeText(shortUrl);
+    toast.success("Copied to clipboard!");
   };
 
   return (
@@ -69,7 +77,7 @@ export default function Home({ user }) {
               {shortUrl}
             </a>
             <button
-              onClick={() => navigator.clipboard.writeText(shortUrl)}
+              onClick={handleCopy} // 3. Update the button to use the new function
               className="ml-4 text-sm bg-white border border-slate-300 px-4 py-2 rounded-md hover:bg-slate-50 transition-colors font-medium text-slate-700 shadow-sm"
             >
               Copy

@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { BrowserRouter, Routes, Route, Link, Navigate } from "react-router-dom";
+import { Toaster } from "react-hot-toast"; // 1. Import Toaster
 import Auth from "./Auth";
 import Dashboard from "./Dashboard";
 import Home from "./Home";
 
 function App() {
-  // Read from localStorage on load. If the data is there, they stay logged in!
   const [user, setUser] = useState(() => {
     const token = localStorage.getItem("token");
     const email = localStorage.getItem("email");
@@ -23,12 +23,22 @@ function App() {
 
   return (
     <BrowserRouter>
+      {/* 2. Add Toaster right inside the Router */}
+      <Toaster
+        position="bottom-center"
+        toastOptions={{
+          style: {
+            background: "#0f172a",
+            color: "#fff",
+            borderRadius: "8px",
+          },
+        }}
+      />
+
       <div className="min-h-screen bg-[#fafafa] text-slate-900 font-sans relative overflow-hidden">
-        {/* Subtle SaaS Grid Background */}
         <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_0%,#000_70%,transparent_100%)]"></div>
 
         <div className="relative z-10">
-          {/* Navbar */}
           <nav className="flex justify-between items-center p-6 max-w-5xl mx-auto">
             <Link
               to="/"
@@ -74,7 +84,6 @@ function App() {
             </div>
           </nav>
 
-          {/* Page Routing */}
           <Routes>
             <Route path="/" element={<Home user={user} />} />
             <Route
@@ -85,8 +94,6 @@ function App() {
               path="/signup"
               element={<Auth mode="signup" setUser={setUser} />}
             />
-
-            {/* Protected Route: If no user, redirect them to login */}
             <Route
               path="/dashboard"
               element={user ? <Dashboard /> : <Navigate to="/login" />}

@@ -5,12 +5,17 @@ const Url = require("../models/Url");
 router.get("/:shortId", async (req, res) => {
   try {
     const { shortId } = req.params;
-    // Find the URL by shortId and increment the clicks by 1 in a single step
+
+    // Updated from { new: true } to { returnDocument: 'after' }
     const url = await Url.findOneAndUpdate(
       { shortId: shortId },
-      { $inc: { clicks: 1 } },
-      { new: true },
+      {
+        $inc: { clicks: 1 },
+        $set: { lastOpenedAt: new Date() },
+      },
+      { returnDocument: "after" },
     );
+
     if (url) {
       return res.redirect(url.originalUrl);
     } else {
@@ -21,4 +26,5 @@ router.get("/:shortId", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+
 module.exports = router;

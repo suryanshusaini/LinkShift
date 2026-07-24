@@ -1,9 +1,38 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 
 export default function Home({ user }) {
   const [longUrl, setLongUrl] = useState("");
+  const [customAlias, setCustomAlias] = useState("");
+  const [showCustom, setShowCustom] = useState(false);
   const [shortUrl, setShortUrl] = useState("");
+  const [savedLinks, setSavedLinks] = useState([]);
+
+  const fetchSavedLinks = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const response = await fetch("http://localhost:8000/api/urls", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSavedLinks(data);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchSavedLinks();
+    }
+  }, [user]);
 
   const handleShorten = async (e) => {
     e.preventDefault();
@@ -17,27 +46,63 @@ export default function Home({ user }) {
       const response = await fetch("http://localhost:8000/api/shorten", {
         method: "POST",
         headers: headers,
-        body: JSON.stringify({ originalUrl: longUrl }),
+        body: JSON.stringify({
+          originalUrl: longUrl,
+          customAlias: customAlias.trim(),
+        }),
       });
 
       const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.error || "Failed to shorten link");
+        return;
+      }
+
       setShortUrl(`http://localhost:8000/${data.shortId}`);
       toast.success("Link shortened successfully!");
+
+      setCustomAlias("");
+      setShowCustom(false);
+      setLongUrl("");
+
+      if (user) {
+        fetchSavedLinks();
+      }
     } catch (error) {
-      console.error("Error shortening URL:", error);
       toast.error("Failed to shorten link");
     }
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(shortUrl);
+  const handleCopy = (text) => {
+    navigator.clipboard.writeText(text);
     toast.success("Copied to clipboard!");
   };
 
+  const handleDelete = async (id) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`http://localhost:8000/api/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        toast.success("Link deleted!");
+        fetchSavedLinks();
+      } else {
+        toast.error("Failed to delete link");
+      }
+    } catch (error) {
+      toast.error("Error deleting link");
+    }
+  };
+
   return (
-    <main className="max-w-6xl mx-auto mt-16 px-6 lg:mt-24">
+    <main className="max-w-6xl mx-auto mt-16 px-6 lg:mt-24 pb-24">
       <div className="grid lg:grid-cols-2 gap-16 items-center">
-        {/* Left Column: Copywriting */}
         <div className="max-w-2xl text-center lg:text-left">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-sm font-medium text-slate-600 mb-6">
             <span className="flex h-2 w-2 rounded-full bg-blue-500"></span>
@@ -85,18 +150,44 @@ export default function Home({ user }) {
           )}
         </div>
 
-        {/* Right Column: Interactive Card Widget */}
         <div className="relative">
-          {/* Decorative background blobs */}
           <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-[2.5rem] blur-xl opacity-20"></div>
 
           <div className="relative bg-white/80 backdrop-blur-xl border border-slate-200/60 p-8 sm:p-10 rounded-[2rem] shadow-2xl">
-            <h3 className="text-2xl font-bold text-slate-900 mb-6 text-center lg:text-left">
-              Create Short Link
-            </h3>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-bold text-slate-900">
+                Create Short Link
+              </h3>
 
-            <form onSubmit={handleShorten} className="mb-6">
-              {/* Nested Input & Button Design */}
+              <button
+                type="button"
+                onClick={() => setShowCustom(!showCustom)}
+                className={`text-sm font-medium px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${showCustom ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                  ></path>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  ></path>
+                </svg>
+                Customize
+              </button>
+            </div>
+
+            <form onSubmit={handleShorten} className="mb-6 space-y-4">
               <div className="relative flex items-center bg-slate-50 border border-slate-200 rounded-2xl p-1.5 focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:border-blue-400 transition-all">
                 <div className="pl-4 text-slate-400">
                   <svg
@@ -121,16 +212,37 @@ export default function Home({ user }) {
                   onChange={(e) => setLongUrl(e.target.value)}
                   required
                 />
-                <button
-                  type="submit"
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors shadow-sm whitespace-nowrap"
-                >
-                  Shorten
-                </button>
               </div>
+
+              <div
+                className={`overflow-hidden transition-all duration-300 ease-in-out ${showCustom ? "max-h-20 opacity-100" : "max-h-0 opacity-0"}`}
+              >
+                <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:border-blue-400 transition-all">
+                  <span className="text-slate-400 mr-1 select-none">
+                    localhost:8000/
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="my-custom-name"
+                    className="w-full bg-transparent text-blue-600 font-medium placeholder-slate-300 focus:outline-none"
+                    value={customAlias}
+                    onChange={(e) =>
+                      setCustomAlias(
+                        e.target.value.replace(/[^a-zA-Z0-9-]/g, ""),
+                      )
+                    }
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-xl font-semibold transition-colors shadow-sm"
+              >
+                Shorten Link
+              </button>
             </form>
 
-            {/* Result Area */}
             {shortUrl && (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 flex flex-col gap-3">
@@ -154,31 +266,15 @@ export default function Home({ user }) {
                       <p className="text-slate-900 font-bold truncate text-lg">
                         {shortUrl}
                       </p>
-                      <p className="text-slate-400 text-sm truncate">
-                        {longUrl}
-                      </p>
                     </div>
                   </div>
 
                   <div className="flex gap-2 mt-2">
                     <button
-                      onClick={handleCopy}
+                      onClick={() => handleCopy(shortUrl)}
                       className="flex-1 bg-white border border-slate-200 text-slate-700 font-medium py-2.5 rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 shadow-sm"
                     >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                        ></path>
-                      </svg>
-                      Copy link
+                      Copy
                     </button>
                     <a
                       href={shortUrl}
@@ -186,32 +282,115 @@ export default function Home({ user }) {
                       rel="noopener noreferrer"
                       className="flex-1 bg-slate-900 text-white font-medium py-2.5 rounded-xl hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 shadow-sm"
                     >
-                      Test Link
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                        ></path>
-                      </svg>
+                      Test
                     </a>
                   </div>
                 </div>
               </div>
             )}
-
-            <div className="mt-8 text-center text-sm font-medium text-slate-400">
-              <p>Free • Fast • Secure • Long Term Links</p>
-            </div>
           </div>
         </div>
       </div>
+
+      {user && savedLinks.length > 0 && (
+        <div className="mt-24 animate-in fade-in duration-500">
+          <h2 className="text-2xl font-bold text-slate-900 mb-6 text-center lg:text-left">
+            Your Saved Links
+          </h2>
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-sm">
+                    <th className="px-6 py-4 font-medium">Original URL</th>
+                    <th className="px-6 py-4 font-medium">Short Link</th>
+                    <th className="px-6 py-4 font-medium">Clicks</th>
+                    <th className="px-6 py-4 font-medium text-right">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {savedLinks.map((link) => (
+                    <tr
+                      key={link._id}
+                      className="hover:bg-slate-50/50 transition-colors"
+                    >
+                      <td className="px-6 py-4 max-w-xs truncate text-slate-600">
+                        <a
+                          href={link.originalUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="hover:text-blue-600 transition-colors"
+                        >
+                          {link.originalUrl}
+                        </a>
+                      </td>
+                      <td className="px-6 py-4">
+                        <a
+                          href={`http://localhost:8000/${link.shortId}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                        >
+                          localhost:8000/{link.shortId}
+                        </a>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-medium text-sm">
+                          {link.clicks || 0}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right space-x-3">
+                        <button
+                          onClick={() =>
+                            handleCopy(`http://localhost:8000/${link.shortId}`)
+                          }
+                          className="text-slate-400 hover:text-blue-600 transition-colors"
+                          title="Copy"
+                        >
+                          <svg
+                            className="w-5 h-5 inline"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                            ></path>
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => handleDelete(link._id)}
+                          className="text-slate-400 hover:text-red-500 transition-colors"
+                          title="Delete"
+                        >
+                          <svg
+                            className="w-5 h-5 inline"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            ></path>
+                          </svg>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

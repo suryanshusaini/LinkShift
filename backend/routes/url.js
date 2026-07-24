@@ -50,4 +50,32 @@ router.get("/dashboard", optionalAuth, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+// DELETE route to remove a URL
+router.delete("/:id", optionalAuth, async (req, res) => {
+  // 1. Make sure they are logged in
+  if (!req.userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  try {
+    // 2. Find the URL by its ID AND the user's ID, then delete it
+    const deletedUrl = await Url.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.userId,
+    });
+
+    if (!deletedUrl) {
+      return res
+        .status(404)
+        .json({
+          error: "URL not found or you don't have permission to delete it",
+        });
+    }
+
+    res.json({ message: "URL deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting URL:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 module.exports = router;

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { BrowserRouter, Routes, Route, Link, Navigate } from "react-router-dom";
-import { Toaster } from "react-hot-toast"; // 1. Import Toaster
+import { Toaster } from "react-hot-toast";
 import Auth from "./Auth";
 import Dashboard from "./Dashboard";
 import Home from "./Home";
@@ -23,67 +23,88 @@ function App() {
 
   return (
     <BrowserRouter>
-      {/* 2. Add Toaster right inside the Router */}
       <Toaster
         position="bottom-center"
         toastOptions={{
-          style: {
-            background: "#0f172a",
-            color: "#fff",
-            borderRadius: "8px",
-          },
+          style: { background: "#0f172a", color: "#fff", borderRadius: "8px" },
         }}
       />
 
-      <div className="min-h-screen bg-[#fafafa] text-slate-900 font-sans relative overflow-hidden">
-        <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_0%,#000_70%,transparent_100%)]"></div>
+      {/* NEW UI: Clean off-white background with a soft top gradient */}
+      <div className="min-h-screen bg-slate-50 text-slate-900 font-sans relative selection:bg-indigo-100">
+        <div className="absolute top-0 w-full h-[500px] bg-gradient-to-b from-slate-200/50 to-transparent -z-10"></div>
 
-        <div className="relative z-10">
-          <nav className="flex justify-between items-center p-6 max-w-5xl mx-auto">
+        {/* NEW UI: Sticky Glassmorphism Navbar */}
+        <nav className="sticky top-0 z-50 backdrop-blur-xl bg-white/70 border-b border-slate-200 shadow-sm">
+          <div className="flex justify-between items-center px-6 py-4 max-w-6xl mx-auto">
             <Link
               to="/"
-              className="text-2xl font-extrabold tracking-tight text-slate-900"
+              className="flex items-center gap-2 text-2xl font-extrabold tracking-tight text-slate-900 transition-transform hover:scale-[1.02]"
             >
+              <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center">
+                <svg
+                  className="w-5 h-5 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                  ></path>
+                </svg>
+              </div>
               LinkShift
             </Link>
+
             <div>
               {user ? (
-                <div className="flex items-center space-x-4">
-                  <span className="text-sm font-medium text-slate-600 hidden sm:block">
-                    {user.email}
-                  </span>
+                <div className="flex items-center space-x-6">
+                  <div className="hidden sm:flex flex-col text-right">
+                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      Logged in as
+                    </span>
+                    <span className="text-sm font-medium text-slate-700">
+                      {user.email}
+                    </span>
+                  </div>
+                  <div className="h-8 w-px bg-slate-200 hidden sm:block"></div>
                   <Link
                     to="/dashboard"
-                    className="text-slate-900 font-medium hover:underline transition-all"
+                    className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors"
                   >
                     Dashboard
                   </Link>
                   <button
                     onClick={handleLogout}
-                    className="text-slate-600 hover:text-red-600 font-medium transition-colors"
+                    className="text-sm font-semibold text-red-500 hover:text-red-700 transition-colors bg-red-50 hover:bg-red-100 px-4 py-2 rounded-lg"
                   >
                     Log out
                   </button>
                 </div>
               ) : (
-                <div className="space-x-4">
+                <div className="space-x-3">
                   <Link
                     to="/login"
-                    className="text-slate-600 hover:text-slate-900 font-medium transition-colors"
+                    className="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all"
                   >
                     Log in
                   </Link>
                   <Link
                     to="/signup"
-                    className="bg-slate-900 text-white px-4 py-2 rounded-md hover:bg-slate-800 font-medium transition-colors shadow-sm"
+                    className="px-5 py-2.5 text-sm font-semibold bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-all shadow-md hover:shadow-lg"
                   >
                     Sign up
                   </Link>
                 </div>
               )}
             </div>
-          </nav>
+          </div>
+        </nav>
 
+        <div className="relative z-10 pb-20">
           <Routes>
             <Route path="/" element={<Home user={user} />} />
             <Route

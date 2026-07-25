@@ -1,195 +1,191 @@
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 
-export default function Dashboard() {
-  const [urls, setUrls] = useState([]);
-  const [loading, setLoading] = useState(true);
+export default function Dashboard({ user }) {
+  const [savedLinks, setSavedLinks] = useState([]);
 
-  useEffect(() => {
-    const fetchUrls = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const response = await fetch("http://localhost:8000/api/dashboard", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setUrls(data);
-        }
-      } catch (err) {
-        toast.error("Failed to load dashboard");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUrls();
-  }, []);
-
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this link?")) return;
-
+  const fetchSavedLinks = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`http://localhost:8000/api/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      if (!token) return;
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/urls`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
 
       if (response.ok) {
-        setUrls(urls.filter((url) => url._id !== id));
-        toast.success("Link deleted successfully!");
-      } else {
-        toast.error("Failed to delete link.");
+        const data = await response.json();
+        setSavedLinks(data);
       }
-    } catch (err) {
-      toast.error("An error occurred.");
+    } catch (error) {
+      console.error(error);
     }
   };
 
-  // Helper to check if a link is inactive (e.g. not opened in 30+ days)
-  const isLinkActive = (lastOpenedAt) => {
-    if (!lastOpenedAt) return true;
-    const lastOpened = new Date(lastOpenedAt);
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    return lastOpened > thirtyDaysAgo;
+  useEffect(() => {
+    fetchSavedLinks();
+  }, []);
+
+  const handleCopy = (text) => {
+    navigator.clipboard.writeText(text);
+    toast.success("Copied to clipboard!");
   };
 
-  if (loading) {
-    return (
-      <div className="text-center mt-20 text-slate-500 font-medium">
-        Loading your links...
-      </div>
-    );
-  }
+  const handleDelete = async (id) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (response.ok) {
+        toast.success("Link deleted!");
+        fetchSavedLinks();
+      } else {
+        toast.error("Failed to delete link");
+      }
+    } catch (error) {
+      toast.error("Error deleting link");
+    }
+  };
 
   return (
-    <div className="max-w-6xl mx-auto mt-10 px-6">
-      {/* Header section matching reference */}
+    <div className="max-w-6xl mx-auto mt-16 px-6 pb-24">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h2 className="text-3xl font-extrabold text-slate-900">My Links</h2>
-          <p className="text-slate-500 text-sm mt-1">
+          <h1 className="text-4xl font-bold text-slate-900 mb-2">My Links</h1>
+          <p className="text-slate-500">
             Manage, monitor analytics, and track your active shortcuts.
           </p>
         </div>
-        <div className="bg-blue-50 border border-blue-100 px-4 py-2 rounded-xl text-blue-700 text-sm font-semibold">
-          {urls.length} Total Links
+        <div className="bg-blue-50 text-blue-600 px-4 py-2 rounded-lg font-semibold border border-blue-100">
+          {savedLinks.length} Total Links
         </div>
       </div>
 
-      {urls.length === 0 ? (
-        <div className="bg-white p-16 rounded-2xl border border-slate-200 text-center shadow-sm">
-          <p className="text-slate-500 font-medium text-lg mb-2">
-            No links created yet.
-          </p>
-          <a href="/" className="text-blue-600 font-semibold hover:underline">
+      {savedLinks.length === 0 ? (
+        <div className="bg-white border border-slate-200 rounded-2xl p-16 text-center shadow-sm">
+          <p className="text-slate-500 mb-4 text-lg">No links created yet.</p>
+          <a
+            href="/"
+            className="text-blue-600 font-semibold hover:text-blue-700 transition-colors"
+          >
             Create your first short link →
           </a>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="max-h-[600px] overflow-y-auto">
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
-              <thead className="sticky top-0 bg-slate-50 border-b border-slate-200 z-10">
-                <tr>
-                  <th className="py-4 px-6 text-xs uppercase tracking-wider font-semibold text-slate-500">
-                    Status
-                  </th>
-                  <th className="py-4 px-6 text-xs uppercase tracking-wider font-semibold text-slate-500">
-                    Project / URL
-                  </th>
-                  <th className="py-4 px-6 text-xs uppercase tracking-wider font-semibold text-slate-500 text-center">
-                    Views
-                  </th>
-                  <th className="py-4 px-6 text-xs uppercase tracking-wider font-semibold text-slate-500">
-                    Last Modified
-                  </th>
-                  <th className="py-4 px-6 text-xs uppercase tracking-wider font-semibold text-slate-500">
-                    Last Opened
-                  </th>
-                  <th className="py-4 px-6 text-xs uppercase tracking-wider font-semibold text-slate-500 text-right">
-                    Actions
-                  </th>
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-sm">
+                  <th className="px-6 py-4 font-medium">Original URL</th>
+                  <th className="px-6 py-4 font-medium">Short Link</th>
+                  <th className="px-6 py-4 font-medium">Status</th>
+                  <th className="px-6 py-4 font-medium">Created</th>
+                  <th className="px-6 py-4 font-medium">Clicks</th>
+                  <th className="px-6 py-4 font-medium text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {urls.map((url) => {
-                  const active = isLinkActive(url.lastOpenedAt);
-                  return (
-                    <tr
-                      key={url._id}
-                      className="hover:bg-slate-50/80 transition-colors group"
-                    >
-                      <td className="py-4 px-6 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
-                            active
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              : "bg-amber-50 text-amber-700 border border-amber-200"
-                          }`}
+                {savedLinks.map((link) => (
+                  <tr
+                    key={link._id}
+                    className="hover:bg-slate-50/50 transition-colors"
+                  >
+                    <td className="px-6 py-4 max-w-xs truncate text-slate-600">
+                      <a
+                        href={link.originalUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="hover:text-blue-600 transition-colors"
+                      >
+                        {link.originalUrl}
+                      </a>
+                    </td>
+                    <td className="px-6 py-4">
+                      <a
+                        href={`${import.meta.env.VITE_API_URL}/${link.shortId}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                      >
+                        {import.meta.env.VITE_API_URL}/{link.shortId}
+                      </a>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-600 border border-emerald-100">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                        Active
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-500">
+                      {link.createdAt
+                        ? new Date(link.createdAt).toLocaleDateString()
+                        : "N/A"}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-medium text-sm">
+                        {link.clicks || 0}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right space-x-3">
+                      <button
+                        onClick={() =>
+                          handleCopy(
+                            `${import.meta.env.VITE_API_URL}/${link.shortId}`,
+                          )
+                        }
+                        className="text-slate-400 hover:text-blue-600 transition-colors"
+                        title="Copy"
+                      >
+                        <svg
+                          className="w-5 h-5 inline"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
                         >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${active ? "bg-emerald-500" : "bg-amber-500"}`}
-                          ></span>
-                          {active ? "Active" : "Inactive"}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 max-w-xs">
-                        <p
-                          className="text-sm font-medium text-slate-900 truncate"
-                          title={url.originalUrl}
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                          ></path>
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => handleDelete(link._id)}
+                        className="text-slate-400 hover:text-red-500 transition-colors"
+                        title="Delete"
+                      >
+                        <svg
+                          className="w-5 h-5 inline"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
                         >
-                          {url.originalUrl}
-                        </p>
-                        <a
-                          href={`http://localhost:8000/${url.shortId}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-blue-600 hover:underline"
-                        >
-                          localhost:8000/{url.shortId}
-                        </a>
-                      </td>
-                      <td className="py-4 px-6 text-sm font-bold text-slate-900 text-center">
-                        {url.clicks}
-                      </td>
-                      <td className="py-4 px-6 text-xs text-slate-500 whitespace-nowrap">
-                        {new Date(
-                          url.updatedAt || url.createdAt,
-                        ).toLocaleDateString()}
-                      </td>
-                      <td className="py-4 px-6 text-xs text-slate-500 whitespace-nowrap">
-                        {url.lastOpenedAt
-                          ? new Date(url.lastOpenedAt).toLocaleDateString()
-                          : "Never"}
-                      </td>
-                      <td className="py-4 px-6 text-right whitespace-nowrap">
-                        <button
-                          onClick={() => handleDelete(url._id)}
-                          className="text-slate-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-all"
-                          title="Delete link"
-                        >
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            ></path>
-                          </svg>
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          ></path>
+                        </svg>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

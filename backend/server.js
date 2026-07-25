@@ -6,6 +6,10 @@ const connectDB = require("./config/db");
 
 const app = express();
 
+// Trust Render's (and other reverse proxies') X-Forwarded-For header.
+// Required for express-rate-limit to correctly identify client IPs in production.
+app.set("trust proxy", 1);
+
 // ─── Database Connection ─────────────────────────────────────────────────────
 connectDB();
 

@@ -20,42 +20,73 @@ const optionalAuth = (req, res, next) => {
   next();
 };
 
-const shortenLimiter = rateLimit({
+const guestLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
   message: {
-    error:
-      "Too many URLs created from this IP. Please try again after 15 minutes.",
+    error: "Guest limit reached. Please log in to create more links.",
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.userId !== undefined,
 });
 
-router.post("/shorten", optionalAuth, shortenLimiter, async (req, res) => {
-  try {
-    const { originalUrl, customAlias } = req.body;
-    let shortId;
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: {
+    error: "Account limit reached. Please try again after 15 minutes.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.userId,
+  skip: (req) => req.userId === undefined,
+});
 
-    if (customAlias && customAlias.trim() !== "") {
-      const existingUrl = await Url.findOne({ shortId: customAlias });
-      if (existingUrl) {
-        return res
-          .status(400)
-          .json({ error: "This custom alias is already taken." });
+router.post(
+  "/shorten",
+  optionalAuth,
+  guestLimiter,
+  authLimiter,
+  async (req, res) => {
+    try {
+      const { originalUrl, customAlias } = req.body;
+      let shortId;
+
+      if (customAlias && customAlias.trim() !== "") {
+        const existingUrl = await Url.findOne({ shortId: customAlias });
+        if (existingUrl) {
+          return res
+            .status(400)
+            .json({ error: "This custom alias is already taken." });
+        }
+        shortId = customAlias;
+      } else {
+        shortId = crypto.randomBytes(3).toString("hex");
       }
-      shortId = customAlias;
-    } else {
-      shortId = crypto.randomBytes(3).toString("hex");
+
+      const newUrl = new Url({
+        originalUrl,
+        shortId,
+        userId: req.userId || null,
+      });
+
+      await newUrl.save();
+      res.json(newUrl);
+    } catch (error) {
+      res.status(500).json({ error: "Server error" });
     }
+  },
+);
 
-    const newUrl = new Url({
-      originalUrl,
-      shortId,
-      userId: req.userId || null,
-    });
+router.get("/urls", optionalAuth, async (req, res) => {
+  if (!req.userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
 
-    await newUrl.save();
-    res.json(newUrl);
+  try {
+    const urls = await Url.find({ userId: req.userId }).sort({ createdAt: -1 });
+    res.json(urls);
   } catch (error) {
     res.status(500).json({ error: "Server error" });
   }

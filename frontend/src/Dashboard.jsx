@@ -3,20 +3,18 @@ import toast from "react-hot-toast";
 
 export default function Dashboard({ user }) {
   const [savedLinks, setSavedLinks] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchSavedLinks = async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/urls`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/urls`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-      );
+      });
 
       if (response.ok) {
         const data = await response.json();
@@ -24,11 +22,19 @@ export default function Dashboard({ user }) {
       }
     } catch (error) {
       console.error(error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
     fetchSavedLinks();
+
+    const intervalId = setInterval(() => {
+      fetchSavedLinks();
+    }, 10000);
+
+    return () => clearInterval(intervalId);
   }, []);
 
   const handleCopy = (text) => {
@@ -74,7 +80,11 @@ export default function Dashboard({ user }) {
         </div>
       </div>
 
-      {savedLinks.length === 0 ? (
+      {isLoading ? (
+        <div className="flex justify-center items-center py-20">
+          <p className="text-slate-500 text-lg">Loading your links...</p>
+        </div>
+      ) : savedLinks.length === 0 ? (
         <div className="bg-white border border-slate-200 rounded-2xl p-16 text-center shadow-sm">
           <p className="text-slate-500 mb-4 text-lg">No links created yet.</p>
           <a

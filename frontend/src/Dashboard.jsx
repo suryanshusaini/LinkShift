@@ -1,6 +1,16 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
+// Format a date string as "Aug 6, 2026" using the native Intl API
+const formatDate = (dateStr) => {
+  if (!dateStr) return "N/A";
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(dateStr));
+};
+
 export default function Dashboard({ savedLinks, setSavedLinks }) {
   const [isLoading, setIsLoading] = useState(true);
 
@@ -68,18 +78,31 @@ export default function Dashboard({ savedLinks, setSavedLinks }) {
 
   return (
     <div className="max-w-6xl mx-auto mt-16 px-6 pb-24">
-      <div className="flex justify-between items-center mb-8">
+      {/* ── Header ──────────────────────────────────────────────────── */}
+      <div className="flex justify-between items-start mb-6">
         <div>
           <h1 className="text-4xl font-bold text-slate-900 mb-2">My Links</h1>
           <p className="text-slate-500">
             Manage, monitor analytics, and track your active shortcuts.
           </p>
         </div>
-        <div className="bg-blue-50 text-blue-600 px-4 py-2 rounded-lg font-semibold border border-blue-100">
+        <div className="bg-blue-50 text-blue-600 px-4 py-2 rounded-lg font-semibold border border-blue-100 shrink-0">
           {savedLinks.length} Total Links
         </div>
       </div>
 
+      {/* ── Retention Policy Notice ──────────────────────────────────── */}
+      <div className="flex items-start gap-3 bg-amber-50 border border-amber-100 text-amber-700 text-sm px-4 py-3 rounded-xl mb-8 leading-relaxed">
+        <span className="text-base shrink-0 mt-0.5">💡</span>
+        <p>
+          <span className="font-semibold">Data Retention Policy:</span> Links
+          with zero clicks for <span className="font-semibold">30 days</span>{" "}
+          are automatically removed to keep your dashboard clean. Every click
+          resets the timer.
+        </p>
+      </div>
+
+      {/* ── Content ─────────────────────────────────────────────────── */}
       {isLoading ? (
         <div className="flex justify-center items-center py-20">
           <p className="text-slate-500 text-lg">Loading your links...</p>
@@ -95,11 +118,11 @@ export default function Dashboard({ savedLinks, setSavedLinks }) {
           </a>
         </div>
       ) : (
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-sm">
+                <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 text-sm">
                   <th className="px-6 py-4 font-medium w-32">Status</th>
                   <th className="px-6 py-4 font-medium">Original URL</th>
                   <th className="px-6 py-4 font-medium">Short Link</th>
@@ -112,12 +135,16 @@ export default function Dashboard({ savedLinks, setSavedLinks }) {
                 {savedLinks.map((link) => (
                   <tr
                     key={link._id}
-                    className="hover:bg-slate-50/50 transition-all duration-300 ease-in-out"
+                    className="hover:bg-slate-50 hover:-translate-y-[1px] transition-all duration-200"
                   >
-                    {/* Status — first column */}
+                    {/* Status — pulsing dot */}
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-600 border border-emerald-100">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                      <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-600 border border-emerald-100">
+                        {/* Outer ping layer for pulse animation */}
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
                         Active
                       </span>
                     </td>
@@ -134,6 +161,7 @@ export default function Dashboard({ savedLinks, setSavedLinks }) {
                       </a>
                     </td>
 
+                    {/* Short link */}
                     <td className="px-6 py-4">
                       <a
                         href={`${import.meta.env.VITE_API_URL}/${link.shortId}`}
@@ -145,18 +173,19 @@ export default function Dashboard({ savedLinks, setSavedLinks }) {
                       </a>
                     </td>
 
+                    {/* Created date — human-readable via Intl */}
                     <td className="px-6 py-4 text-sm text-slate-500">
-                      {link.createdAt
-                        ? new Date(link.createdAt).toLocaleDateString()
-                        : "N/A"}
+                      {formatDate(link.createdAt)}
                     </td>
 
+                    {/* Click count */}
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-medium text-sm">
                         {link.clicks || 0}
                       </span>
                     </td>
 
+                    {/* Actions */}
                     <td className="px-6 py-4 text-right space-x-3">
                       <button
                         onClick={() =>

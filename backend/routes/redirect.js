@@ -23,12 +23,14 @@ router.get("/:shortId", async (req, res) => {
     const { shortId } = req.params;
 
     // Atomically find the document, increment the click counter, and
-    // update the last opened timestamp in a single DB round-trip.
+    // reset the TTL expiry window in a single DB round-trip.
+    // Updating lastAccessedAt to now() ensures the 30-day inactivity
+    // clock restarts on every click — active links will never be purged.
     const url = await Url.findOneAndUpdate(
       { shortId },
       {
         $inc: { clicks: 1 },
-        $set: { lastOpenedAt: new Date() },
+        $set: { lastAccessedAt: new Date() },
       },
       { new: true },
     );

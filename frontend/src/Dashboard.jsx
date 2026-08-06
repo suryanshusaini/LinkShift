@@ -56,13 +56,13 @@ export default function Dashboard({ user }) {
       );
 
       if (response.ok) {
-        toast.success("Link deleted!");
+        toast.success("Link deleted successfully.");
         fetchSavedLinks();
       } else {
-        toast.error("Failed to delete link");
+        toast.error("Failed to delete link.");
       }
     } catch (error) {
-      toast.error("Error deleting link");
+      toast.error("Failed to delete link.");
     }
   };
 
@@ -100,9 +100,9 @@ export default function Dashboard({ user }) {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-sm">
+                  <th className="px-6 py-4 font-medium w-32">Status</th>
                   <th className="px-6 py-4 font-medium">Original URL</th>
                   <th className="px-6 py-4 font-medium">Short Link</th>
-                  <th className="px-6 py-4 font-medium">Status</th>
                   <th className="px-6 py-4 font-medium">Created</th>
                   <th className="px-6 py-4 font-medium">Clicks</th>
                   <th className="px-6 py-4 font-medium text-right">Actions</th>
@@ -114,6 +114,15 @@ export default function Dashboard({ user }) {
                     key={link._id}
                     className="hover:bg-slate-50/50 transition-colors"
                   >
+                    {/* Status is now the first column */}
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-600 border border-emerald-100">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                        Active
+                      </span>
+                    </td>
+
+                    {/* Original URL is now the second column */}
                     <td className="px-6 py-4 max-w-xs truncate text-slate-600">
                       <a
                         href={link.originalUrl}
@@ -124,6 +133,7 @@ export default function Dashboard({ user }) {
                         {link.originalUrl}
                       </a>
                     </td>
+
                     <td className="px-6 py-4">
                       <a
                         href={`${import.meta.env.VITE_API_URL}/${link.shortId}`}
@@ -134,22 +144,19 @@ export default function Dashboard({ user }) {
                         {import.meta.env.VITE_API_URL}/{link.shortId}
                       </a>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-600 border border-emerald-100">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                        Active
-                      </span>
-                    </td>
+
                     <td className="px-6 py-4 text-sm text-slate-500">
                       {link.createdAt
                         ? new Date(link.createdAt).toLocaleDateString()
                         : "N/A"}
                     </td>
+
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-medium text-sm">
                         {link.clicks || 0}
                       </span>
                     </td>
+
                     <td className="px-6 py-4 text-right space-x-3">
                       <button
                         onClick={() =>

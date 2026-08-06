@@ -35,9 +35,7 @@ export default function Home({ user }) {
         return;
       }
 
-      setShortUrl(
-        `${import.meta.env.VITE_API_URL}/${data.shortId}`,
-      );
+      setShortUrl(`${import.meta.env.VITE_API_URL}/${data.shortId}`);
       toast.success("Link shortened successfully!");
 
       setCustomAlias("");
@@ -170,20 +168,16 @@ export default function Home({ user }) {
               <div
                 className={`overflow-hidden transition-all duration-300 ease-in-out ${showCustom ? "max-h-20 opacity-100" : "max-h-0 opacity-0"}`}
               >
-                <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:border-blue-400 transition-all">
-                  <span className="text-slate-400 mr-1 select-none">
+                <div className="flex items-center w-full bg-slate-50/50 border border-slate-200 rounded-2xl px-4 py-3.5 focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-500/10 transition-all">
+                  <span className="text-slate-400 text-sm whitespace-nowrap select-none">
                     {import.meta.env.VITE_API_URL}/
                   </span>
                   <input
                     type="text"
-                    placeholder="my-custom-name"
-                    className="w-full bg-transparent text-blue-600 font-medium placeholder-slate-300 focus:outline-none"
+                    placeholder="my-custom-alias"
+                    className="flex-1 bg-transparent text-slate-700 outline-none min-w-0 placeholder:text-slate-400 pl-1"
                     value={customAlias}
-                    onChange={(e) =>
-                      setCustomAlias(
-                        e.target.value.replace(/[^a-zA-Z0-9-]/g, ""),
-                      )
-                    }
+                    onChange={(e) => setCustomAlias(e.target.value)}
                   />
                 </div>
               </div>

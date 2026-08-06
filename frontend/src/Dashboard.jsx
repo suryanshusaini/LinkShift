@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 // Format a date string as "Aug 6, 2026" using the native Intl API
@@ -11,8 +12,10 @@ const formatDate = (dateStr) => {
   }).format(new Date(dateStr));
 };
 
-export default function Dashboard({ savedLinks, setSavedLinks }) {
+export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted }) {
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const navigate = useNavigate();
 
   const fetchSavedLinks = async () => {
     try {
@@ -76,6 +79,43 @@ export default function Dashboard({ savedLinks, setSavedLinks }) {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm(
+      "Are you absolutely sure? This will permanently delete your account and all your shortened links. This action cannot be undone.",
+    );
+    if (!confirmed) return;
+
+    setIsDeletingAccount(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/auth/account`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
+      if (response.ok) {
+        toast.success("Account deleted. Sorry to see you go!");
+        // Clear all session data from localStorage
+        localStorage.removeItem("token");
+        localStorage.removeItem("email");
+        localStorage.removeItem("name");
+        // Notify App.jsx to reset user + savedLinks state
+        if (onAccountDeleted) onAccountDeleted();
+        navigate("/");
+      } else {
+        const data = await response.json();
+        toast.error(data.message || "Failed to delete account.");
+      }
+    } catch (err) {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto mt-16 px-6 pb-24">
       {/* ── Header ──────────────────────────────────────────────────── */}
@@ -86,8 +126,18 @@ export default function Dashboard({ savedLinks, setSavedLinks }) {
             Manage, monitor analytics, and track your active shortcuts.
           </p>
         </div>
-        <div className="bg-blue-50 text-blue-600 px-4 py-2 rounded-lg font-semibold border border-blue-100 shrink-0">
-          {savedLinks.length} Total Links
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="bg-blue-50 text-blue-600 px-4 py-2 rounded-lg font-semibold border border-blue-100">
+            {savedLinks.length} Total Links
+          </div>
+          <button
+            onClick={handleDeleteAccount}
+            disabled={isDeletingAccount}
+            className="text-red-500 hover:bg-red-50 border border-red-200 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Permanently delete your account and all links"
+          >
+            {isDeletingAccount ? "Deleting..." : "Delete Account"}
+          </button>
         </div>
       </div>
 

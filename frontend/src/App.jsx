@@ -148,6 +148,7 @@ function App() {
                       <Dashboard
                         savedLinks={savedLinks}
                         setSavedLinks={setSavedLinks}
+                        onAccountDeleted={handleLogout}
                       />
                     ) : (
                       <Navigate to="/login" />

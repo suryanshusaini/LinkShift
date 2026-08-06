@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { OAuth2Client } = require("google-auth-library");
 const User = require("../models/User");
+const Url = require("../models/Url");
 
 const router = express.Router();
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -14,6 +15,24 @@ const signToken = (user) =>
     process.env.JWT_SECRET,
     { expiresIn: "7d" },
   );
+
+// ─── Helper: require authenticated user (strict — unlike optionalAuth) ────────
+const requireAuth = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  try {
+    const decoded = jwt.verify(
+      authHeader.split(" ")[1],
+      process.env.JWT_SECRET,
+    );
+    req.userId = decoded.userId;
+    next();
+  } catch {
+    return res.status(401).json({ message: "Invalid or expired token" });
+  }
+};
 
 // ─── Register ─────────────────────────────────────────────────────────────────
 router.post("/register", async (req, res) => {
@@ -101,5 +120,24 @@ router.post("/google", async (req, res) => {
   }
 });
 
-module.exports = router;
+// ─── Delete Account ───────────────────────────────────────────────────────────
+// Protected: JWT required. Cascades — removes all user's URLs first, then the
+// user document itself. Returns 200 so the client can clear state and redirect.
+router.delete("/account", requireAuth, async (req, res) => {
+  try {
+    const userId = req.userId;
 
+    // 1. Delete every shortened URL owned by this user
+    await Url.deleteMany({ userId });
+
+    // 2. Delete the user document
+    await User.findByIdAndDelete(userId);
+
+    res.json({ message: "Account deleted successfully." });
+  } catch (err) {
+    console.error("Account deletion error:", err.message);
+    res.status(500).json({ message: "Server error. Please try again." });
+  }
+});
+
+module.exports = router;

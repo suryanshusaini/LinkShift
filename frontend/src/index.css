@@ -1,1 +1,10 @@
 @import "tailwindcss";
+
+/* Fix for transparent/gradient text disappearing on highlight.
+   Without -webkit-text-fill-color, text rendered with bg-clip-text
+   becomes invisible when selected because the fill is transparent. */
+::selection {
+  background-color: #3b82f6;
+  color: white;
+  -webkit-text-fill-color: white;
+}

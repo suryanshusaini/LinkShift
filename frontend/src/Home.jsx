@@ -1,15 +1,17 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 
-export default function Home({ user }) {
+export default function Home({ user, onLinkCreated }) {
   const [longUrl, setLongUrl] = useState("");
   const [customAlias, setCustomAlias] = useState("");
   const [showCustom, setShowCustom] = useState(false);
   const [shortUrl, setShortUrl] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleShorten = async (e) => {
     e.preventDefault();
     if (!longUrl) return;
+    setIsSubmitting(true);
 
     try {
       const token = localStorage.getItem("token");
@@ -38,11 +40,16 @@ export default function Home({ user }) {
       setShortUrl(`${import.meta.env.VITE_API_URL}/${data.shortId}`);
       toast.success("Link shortened successfully!");
 
+      // Instantly update Dashboard without requiring a page refresh
+      if (onLinkCreated) onLinkCreated(data);
+
       setCustomAlias("");
       setShowCustom(false);
       setLongUrl("");
     } catch (error) {
       toast.error("Failed to shorten link");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -184,9 +191,10 @@ export default function Home({ user }) {
 
               <button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-xl font-semibold transition-colors shadow-sm"
+                disabled={isSubmitting}
+                className="w-full bg-blue-600 hover:bg-blue-700 hover:shadow-md text-white px-6 py-4 rounded-xl font-semibold transition-all duration-300 ease-in-out shadow-sm disabled:bg-blue-300 disabled:cursor-not-allowed"
               >
-                Shorten Link
+                {isSubmitting ? "Shortening..." : "Shorten Link"}
               </button>
             </form>
 

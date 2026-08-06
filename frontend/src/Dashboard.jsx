@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
-export default function Dashboard({ user }) {
-  const [savedLinks, setSavedLinks] = useState([]);
+export default function Dashboard({ savedLinks, setSavedLinks }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchSavedLinks = async () => {
@@ -56,8 +55,9 @@ export default function Dashboard({ user }) {
       );
 
       if (response.ok) {
+        // Optimistic update — remove immediately without waiting for re-fetch
+        setSavedLinks((prev) => prev.filter((link) => link._id !== id));
         toast.success("Link deleted successfully.");
-        fetchSavedLinks();
       } else {
         toast.error("Failed to delete link.");
       }
@@ -89,7 +89,7 @@ export default function Dashboard({ user }) {
           <p className="text-slate-500 mb-4 text-lg">No links created yet.</p>
           <a
             href="/"
-            className="text-blue-600 font-semibold hover:text-blue-700 transition-colors"
+            className="text-blue-600 font-semibold hover:text-blue-700 transition-all duration-300 ease-in-out"
           >
             Create your first short link →
           </a>
@@ -112,9 +112,9 @@ export default function Dashboard({ user }) {
                 {savedLinks.map((link) => (
                   <tr
                     key={link._id}
-                    className="hover:bg-slate-50/50 transition-colors"
+                    className="hover:bg-slate-50/50 transition-all duration-300 ease-in-out"
                   >
-                    {/* Status is now the first column */}
+                    {/* Status — first column */}
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-600 border border-emerald-100">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
@@ -122,13 +122,13 @@ export default function Dashboard({ user }) {
                       </span>
                     </td>
 
-                    {/* Original URL is now the second column */}
+                    {/* Original URL */}
                     <td className="px-6 py-4 max-w-xs truncate text-slate-600">
                       <a
                         href={link.originalUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="hover:text-blue-600 transition-colors"
+                        className="hover:text-blue-600 transition-all duration-300 ease-in-out"
                       >
                         {link.originalUrl}
                       </a>
@@ -139,7 +139,7 @@ export default function Dashboard({ user }) {
                         href={`${import.meta.env.VITE_API_URL}/${link.shortId}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                        className="font-medium text-blue-600 hover:text-blue-700 transition-all duration-300 ease-in-out"
                       >
                         {import.meta.env.VITE_API_URL}/{link.shortId}
                       </a>
@@ -164,7 +164,7 @@ export default function Dashboard({ user }) {
                             `${import.meta.env.VITE_API_URL}/${link.shortId}`,
                           )
                         }
-                        className="text-slate-400 hover:text-blue-600 transition-colors"
+                        className="text-slate-400 hover:text-blue-600 hover:scale-110 transition-all duration-300 ease-in-out"
                         title="Copy"
                       >
                         <svg
@@ -183,7 +183,7 @@ export default function Dashboard({ user }) {
                       </button>
                       <button
                         onClick={() => handleDelete(link._id)}
-                        className="text-slate-400 hover:text-red-500 transition-colors"
+                        className="text-slate-400 hover:text-red-500 hover:scale-110 transition-all duration-300 ease-in-out"
                         title="Delete"
                       >
                         <svg
@@ -211,3 +211,4 @@ export default function Dashboard({ user }) {
     </div>
   );
 }
+

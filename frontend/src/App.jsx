@@ -29,9 +29,7 @@ function App() {
   };
 
   // Derive display name: prefer name, fall back to email prefix
-  const displayName = user
-    ? user.name || user.email.split("@")[0]
-    : "";
+  const displayName = user ? user.name || user.email.split("@")[0] : "";
 
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ""}>
@@ -39,7 +37,11 @@ function App() {
         <Toaster
           position="bottom-center"
           toastOptions={{
-            style: { background: "#0f172a", color: "#fff", borderRadius: "8px" },
+            style: {
+              background: "#0f172a",
+              color: "#fff",
+              borderRadius: "8px",
+            },
           }}
         />
 
@@ -171,7 +173,7 @@ function App() {
                   Report Bug / Feedback
                 </a>
                 <a
-                  href="https://github.com/suryanshusaini"
+                  href="mailto:suryanshusaini2009@gmail.com"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-slate-900 transition-all duration-300 ease-in-out"
@@ -188,4 +190,3 @@ function App() {
 }
 
 export default App;
-

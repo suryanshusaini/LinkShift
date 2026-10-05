@@ -11,10 +11,10 @@
   --color-chalk: #FFFFFF;
   --color-tape: #F7C928;
   --color-tape-hover: #EAB308;
-  --color-slate: #667085;
+  --color-slate: #5B6472;
   --color-signal: #3157D5;
   --color-go: #15803D;
-  --color-stop: #DC2626;
+  --color-stop: #C81E1E;
   --color-warn: #FFF7D6;
 
   --color-night: #080E1A;
@@ -36,8 +36,8 @@
   --surface-raised: #FFFFFF;
   --border: #E2E4E1;
   --border-soft: #ECEDEA;
-  --muted: #667085;
-  --muted-soft: #98A2B3;
+  --muted: #5B6472;
+  --muted-soft: #7B8491;
   --focus: #3157D5;
 
   --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
@@ -103,16 +103,7 @@ a {
     background-color 160ms ease,
     border-color 160ms ease,
     box-shadow 160ms ease,
-    opacity 160ms ease,
-    transform 160ms ease;
-}
-
-button:not(:disabled):hover {
-  transform: translateY(-1px);
-}
-
-button:not(:disabled):active {
-  transform: translateY(0);
+    opacity 160ms ease;
 }
 
 a:hover {
@@ -178,19 +169,6 @@ textarea:focus {
 
 button:disabled {
   cursor: not-allowed;
-}
-
-/* Intentional elevation. Use these instead of decorative glow effects. */
-.surface-hover {
-  transition:
-    transform 180ms ease,
-    box-shadow 180ms ease,
-    border-color 180ms ease;
-}
-
-.surface-hover:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
 }
 
 .elevation-1 { box-shadow: var(--shadow-sm); }
@@ -265,9 +243,7 @@ button[aria-label] {
     transition-duration: 0.01ms !important;
   }
 
-  button:not(:disabled):hover,
-  button:not(:disabled):active,
-  .surface-hover:hover {
+  button:not(:disabled):active {
     transform: none !important;
   }
 }

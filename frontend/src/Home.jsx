@@ -82,7 +82,7 @@ export default function Home({ user, onLinkCreated }) {
         <div className="mt-10 max-w-[760px]">
           {!result ? (
             <form onSubmit={handleShorten}>
-              <div className="flex flex-col gap-2 rounded-[12px] border-2 border-ink bg-chalk p-1.5 sm:flex-row sm:items-stretch dark:bg-surface dark:text-text-dark">
+              <div className="flex flex-col gap-2 rounded-[14px] border border-ink/15 bg-chalk p-1.5 shadow-[0_10px_30px_rgba(16,24,40,0.06)] transition-shadow duration-200 hover:shadow-[0_14px_34px_rgba(16,24,40,0.09)] sm:flex-row sm:items-stretch dark:border-white/10 dark:bg-surface dark:text-text-dark dark:shadow-[0_14px_34px_rgba(0,0,0,0.18)]">
                 <label htmlFor="long-url" className="sr-only">Long URL</label>
                 <input id="long-url" type="url" required value={longUrl} onChange={(e) => setLongUrl(e.target.value)} placeholder="https://example.com/very/long/path" className="h-12 min-w-0 flex-1 bg-transparent px-4 text-[15px] text-ink placeholder:text-slate/70 dark:text-text-dark dark:placeholder:text-slate-dark/70 sm:h-[52px]" />
                 <button type="submit" disabled={submitting || !longUrl.trim()} className="h-[52px] rounded-[10px] border-[1.5px] border-ink bg-tape px-6 font-semibold text-ink transition-colors hover:bg-tape-hover disabled:cursor-not-allowed disabled:opacity-50 sm:h-[56px]">{submitting ? "Shortening…" : "Shorten"}</button>
@@ -118,7 +118,7 @@ export default function Home({ user, onLinkCreated }) {
               <p className="mt-4 text-sm text-slate dark:text-slate-dark">Free. No card needed.</p>
             </form>
           ) : (
-            <div className="rounded-[14px] border border-ink/12 bg-chalk p-6 dark:border-white/14 dark:bg-surface sm:p-7">
+            <div className="surface-hover rounded-[14px] border border-ink/12 bg-chalk p-6 shadow-[0_8px_24px_rgba(16,24,40,0.05)] dark:border-white/10 dark:bg-surface dark:shadow-[0_14px_34px_rgba(0,0,0,0.16)] sm:p-7">
               <p className="text-sm font-semibold text-slate dark:text-slate-dark">Your short link</p>
               <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <a href={shortUrl} target="_blank" rel="noreferrer" className="break-all font-mono text-xl font-medium text-ink underline decoration-tape decoration-2 underline-offset-4 dark:text-text-dark sm:text-[22px]">{shortUrl}</a>

@@ -7,6 +7,7 @@ const nodemailer = require("nodemailer");
 const { OAuth2Client } = require("google-auth-library");
 const User = require("../models/User");
 const Url = require("../models/Url");
+const ClickEvent = require("../models/ClickEvent");
 
 const router = express.Router();
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -114,6 +115,8 @@ router.post("/logout", requireAuth, (req, res) => res.json({ message: "Logged ou
 
 router.delete("/account", requireAuth, async (req, res) => {
   try {
+    const links = await Url.find({ userId: req.userId }).select("_id").lean();
+    if (links.length) await ClickEvent.deleteMany({ urlId: { $in: links.map((link) => link._id) } });
     await Url.deleteMany({ userId: req.userId });
     await User.findByIdAndDelete(req.userId);
     return res.json({ message: "Account deleted successfully." });

@@ -155,7 +155,7 @@ export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted 
       <Link to="/" className="inline-flex h-11 items-center justify-center rounded-[10px] border-[1.5px] border-ink bg-tape px-5 font-semibold text-ink hover:bg-tape-hover">Create link</Link>
     </div>
 
-    <div className="mt-7 grid gap-px overflow-hidden rounded-[12px] border border-ink/12 bg-ink/12 dark:border-white/14 dark:bg-white/10 sm:grid-cols-3">
+    <div className="mt-7 grid gap-px overflow-hidden rounded-[14px] border border-ink/10 bg-ink/8 shadow-sm dark:border-white/10 dark:bg-white/7 sm:grid-cols-3">
       {[{label:"Total links",value:total},{label:"Active on this page",value:activeCount},{label:"Clicks on this page",value:totalClicks}].map((stat)=><div key={stat.label} className="bg-chalk px-5 py-5 dark:bg-surface"><p className="text-sm text-slate dark:text-slate-dark">{stat.label}</p><p className="mt-1 font-mono text-2xl font-semibold text-ink dark:text-text-dark">{stat.value}</p></div>)}
     </div>
 
@@ -165,7 +165,7 @@ export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted 
       <select value={sort} onChange={(e)=>setSort(e.target.value)} className="h-12 rounded-[10px] border border-ink/20 bg-chalk px-3 text-sm dark:border-white/15 dark:bg-surface"><option value="newest">Newest</option><option value="oldest">Oldest</option><option value="clicks">Most clicks</option><option value="updated">Recently updated</option></select>
     </div>
 
-    <div className="mt-5 overflow-hidden rounded-[12px] border border-ink/12 bg-chalk dark:border-white/14 dark:bg-surface">
+    <div className="mt-5 overflow-hidden surface-hover rounded-[14px] border border-ink/10 bg-chalk shadow-[0_10px_28px_rgba(16,24,40,0.045)] dark:border-white/10 dark:bg-surface dark:shadow-[0_14px_34px_rgba(0,0,0,0.16)]">
       {loading ? <div className="px-6 py-16 text-center text-slate dark:text-slate-dark">Loading links…</div> : items.length === 0 ? <div className="px-6 py-16 text-center"><p className="font-semibold text-ink dark:text-text-dark">No links match these filters.</p><Link to="/" className="mt-2 inline-block text-sm font-semibold text-signal">Create a new link →</Link></div> : <>
         <div className="hidden overflow-x-auto md:block"><table className="w-full min-w-[900px] text-left"><thead className="border-b border-ink/10 bg-plaster/70 dark:border-white/10 dark:bg-night/30"><tr className="text-xs uppercase tracking-wide text-slate dark:text-slate-dark"><th className="px-5 py-4">Link</th><th className="px-5 py-4">Status</th><th className="px-5 py-4">Created</th><th className="px-5 py-4">Clicks</th><th className="px-5 py-4">Expiry</th><th className="px-5 py-4 text-right">Actions</th></tr></thead><tbody className="divide-y divide-ink/10 dark:divide-white/10">{items.map((link)=><tr key={link._id} className="align-top hover:bg-plaster/50 dark:hover:bg-night/30">
           <td className="max-w-[360px] px-5 py-5"><a href={SHORT_BASE+"/"+link.shortId} target="_blank" rel="noreferrer" className="font-mono font-semibold text-signal hover:underline">{SHORT_BASE}/{link.shortId}</a><p className="mt-1 truncate text-sm text-slate dark:text-slate-dark" title={link.originalUrl}>{link.originalUrl}</p></td>

@@ -9,6 +9,7 @@ import Home from "./Home";
 import NotFound from "./NotFound";
 import ForgotPassword from "./ForgotPassword";
 import ResetPassword from "./ResetPassword";
+import Legal from "./Legal";
 
 function ThemeToggle({ isDark, onToggle, mobile = false }) {
   return (
@@ -176,10 +177,14 @@ function Shell({ user, handleLogout, children }) {
         <div className="mx-auto flex max-w-[1120px] flex-col gap-4 px-4 py-8 text-sm text-slate sm:flex-row sm:items-center sm:justify-between sm:px-6 dark:text-slate-dark">
           <p>Built by Suryanshu Saini</p>
           <div className="flex flex-wrap gap-5">
-            <a href="https://github.com/suryanshusaini/LinkShift" target="_blank" rel="noreferrer" className="hover:text-ink dark:hover:text-text-dark">GitHub</a>
             <Link to="/terms" className="hover:text-ink dark:hover:text-text-dark">Terms</Link>
             <Link to="/privacy" className="hover:text-ink dark:hover:text-text-dark">Privacy</Link>
-            <Link to="/report" className="hover:text-ink dark:hover:text-text-dark">Report a problem</Link>
+            <a
+              href="mailto:?subject=LinkShift%20-%20Report%20a%20problem&body=Hi%20LinkShift%20team%2C%0A%0AI%20would%20like%20to%20report%20a%20problem.%0A%0AProblem%3A%0A"
+              className="hover:text-ink dark:hover:text-text-dark"
+            >
+              Report a problem
+            </a>
           </div>
         </div>
       </footer>
@@ -226,6 +231,8 @@ function App() {
             <Route path="/signup" element={<Auth mode="signup" setUser={setUser} />} />
             <Route path="/forgot" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/terms" element={<Legal type="terms" />} />
+            <Route path="/privacy" element={<Legal type="privacy" />} />
             <Route path="/dashboard" element={user ? <Dashboard savedLinks={savedLinks} setSavedLinks={setSavedLinks} onAccountDeleted={handleLogout} /> : <Navigate to="/login" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

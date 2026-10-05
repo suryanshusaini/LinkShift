@@ -2,6 +2,7 @@
 @import "@fontsource/jetbrains-mono";
 @import "tailwindcss";
 
+/* Tailwind v4: make dark: follow LinkShift's explicit theme toggle. */
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
@@ -32,16 +33,16 @@
   --page-text: #201A16;
   --surface: #FFFDF8;
   --surface-soft: #E9DCCB;
-  --surface-raised: #FFFFFF;
+  --surface-raised: #FFFDF8;
   --border: #D8C9B7;
   --border-soft: #E7DCCD;
   --muted: #62584F;
   --muted-soft: #81756A;
   --focus: #3157D5;
 
-  --shadow-sm: 0 2px 4px rgba(45, 31, 20, 0.08);
-  --shadow-md: 0 12px 28px rgba(45, 31, 20, 0.12);
-  --shadow-lg: 0 24px 60px rgba(45, 31, 20, 0.18);
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow-md: 0 8px 24px rgba(16, 24, 40, 0.07);
+  --shadow-lg: 0 20px 50px rgba(16, 24, 40, 0.13);
 }
 
 html.dark {
@@ -51,15 +52,15 @@ html.dark {
   --surface: #211A15;
   --surface-soft: #2B221B;
   --surface-raised: #342920;
-  --border: rgba(255, 249, 242, 0.14);
-  --border-soft: rgba(255, 249, 242, 0.08);
+  --border: rgba(255, 255, 255, 0.11);
+  --border-soft: rgba(255, 255, 255, 0.065);
   --muted: #BEB2A5;
   --muted-soft: #988B7E;
   --focus: #7892FF;
 
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.22);
-  --shadow-md: 0 12px 30px rgba(0, 0, 0, 0.28);
-  --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.42);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.20);
+  --shadow-md: 0 10px 28px rgba(0, 0, 0, 0.24);
+  --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.36);
 }
 
 html,
@@ -120,8 +121,8 @@ a:hover {
 
 ::selection {
   background: #FF5A1F;
-  color: #FFFDF8;
-  -webkit-text-fill-color: #FFFDF8;
+  color: #172033;
+  -webkit-text-fill-color: #201A16;
 }
 
 .autofill-fix:-webkit-autofill,
@@ -156,7 +157,7 @@ textarea {
 input:hover:not(:disabled),
 select:hover:not(:disabled),
 textarea:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--page-text) 28%, var(--border));
+  border-color: color-mix(in srgb, var(--page-text) 22%, var(--border));
 }
 
 input:focus,
@@ -174,11 +175,12 @@ button:disabled {
 .elevation-2 { box-shadow: var(--shadow-md); }
 .elevation-3 { box-shadow: var(--shadow-lg); }
 
+/* The ruler is the one place where a repeated-line treatment is intentional. */
 .ruler-ticks {
   background-image: repeating-linear-gradient(
     to right,
-    rgba(32, 26, 22, 0.24) 0,
-    rgba(32, 26, 22, 0.24) 1px,
+    rgba(32, 26, 22, 0.22) 0,
+    rgba(32, 26, 22, 0.22) 1px,
     transparent 1px,
     transparent 8px
   );
@@ -198,8 +200,8 @@ button:disabled {
 html.dark .ruler-ticks {
   background-image: repeating-linear-gradient(
     to right,
-    rgba(255, 249, 242, 0.24) 0,
-    rgba(255, 249, 242, 0.24) 1px,
+    rgba(248, 250, 252, 0.24) 0,
+    rgba(248, 250, 252, 0.24) 1px,
     transparent 1px,
     transparent 8px
   );

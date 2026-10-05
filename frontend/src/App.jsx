@@ -7,6 +7,8 @@ import Auth from "./Auth";
 import Dashboard from "./Dashboard";
 import Home from "./Home";
 import NotFound from "./NotFound";
+import ForgotPassword from "./ForgotPassword";
+import ResetPassword from "./ResetPassword";
 
 function Shell({ user, setUser, handleLogout, children }) {
   const location = useLocation();
@@ -114,6 +116,8 @@ function App() {
             <Route path="/" element={<Home user={user} onLinkCreated={(link) => setSavedLinks((prev) => [link, ...prev])} />} />
             <Route path="/login" element={<Auth mode="login" setUser={setUser} />} />
             <Route path="/signup" element={<Auth mode="signup" setUser={setUser} />} />
+            <Route path="/forgot" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/dashboard" element={user ? <Dashboard savedLinks={savedLinks} setSavedLinks={setSavedLinks} onAccountDeleted={handleLogout} /> : <Navigate to="/login" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -2,10 +2,12 @@
 @import "@fontsource/jetbrains-mono";
 @import "tailwindcss";
 
+/* Tailwind v4: make dark: follow LinkShift's explicit theme toggle. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
-  /* LinkShift light theme */
   --color-ink: #172033;
-  --color-plaster: #F7F8FA;
+  --color-plaster: #F6F6F3;
   --color-chalk: #FFFFFF;
   --color-tape: #F7C928;
   --color-tape-hover: #EAB308;
@@ -15,7 +17,6 @@
   --color-stop: #DC2626;
   --color-warn: #FFF7D6;
 
-  /* LinkShift dark theme */
   --color-night: #080E1A;
   --color-surface: #111A2B;
   --color-surface-raised: #17233A;
@@ -28,16 +29,20 @@
 
 :root {
   color-scheme: light;
-  --page-bg: #F7F8FA;
+  --page-bg: #F6F6F3;
   --page-text: #172033;
   --surface: #FFFFFF;
-  --surface-soft: #F1F3F5;
+  --surface-soft: #F0F1EF;
   --surface-raised: #FFFFFF;
-  --border: #E4E7EC;
-  --border-soft: #EEF0F3;
+  --border: #E2E4E1;
+  --border-soft: #ECEDEA;
   --muted: #667085;
   --muted-soft: #98A2B3;
   --focus: #3157D5;
+
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow-md: 0 8px 24px rgba(16, 24, 40, 0.07);
+  --shadow-lg: 0 20px 50px rgba(16, 24, 40, 0.13);
 }
 
 html.dark {
@@ -51,7 +56,11 @@ html.dark {
   --border-soft: rgba(255, 255, 255, 0.065);
   --muted: #A8B3C7;
   --muted-soft: #7E8BA3;
-  --focus: #6F8DFF;
+  --focus: #7892FF;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.20);
+  --shadow-md: 0 10px 28px rgba(0, 0, 0, 0.24);
+  --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.36);
 }
 
 html,
@@ -67,20 +76,12 @@ html {
 
 body {
   margin: 0;
-  background:
-    radial-gradient(circle at 50% -20%, rgba(49, 87, 213, 0.045), transparent 38%),
-    var(--page-bg);
+  background: var(--page-bg);
   color: var(--page-text);
   font-family: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  transition: background-color 220ms ease, color 220ms ease;
-}
-
-html.dark body {
-  background:
-    radial-gradient(circle at 50% -18%, rgba(247, 201, 40, 0.045), transparent 34%),
-    var(--page-bg);
+  transition: background-color 180ms ease, color 180ms ease;
 }
 
 button,
@@ -123,8 +124,8 @@ a:hover {
 }
 
 *:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--focus) 78%, transparent);
-  outline-offset: 3px;
+  outline: 2px solid color-mix(in srgb, var(--focus) 72%, transparent);
+  outline-offset: 2px;
 }
 
 ::selection {
@@ -150,7 +151,7 @@ html.dark .autofill-fix:-webkit-autofill:focus {
 
 input::placeholder,
 textarea::placeholder {
-  color: color-mix(in srgb, var(--muted) 72%, transparent);
+  color: var(--muted-soft);
 }
 
 input,
@@ -165,20 +166,38 @@ textarea {
 input:hover:not(:disabled),
 select:hover:not(:disabled),
 textarea:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--page-text) 24%, var(--border));
+  border-color: color-mix(in srgb, var(--page-text) 22%, var(--border));
 }
 
 input:focus,
 select:focus,
 textarea:focus {
   border-color: var(--focus) !important;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 13%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 12%, transparent);
 }
 
 button:disabled {
   cursor: not-allowed;
 }
 
+/* Intentional elevation. Use these instead of decorative glow effects. */
+.surface-hover {
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease;
+}
+
+.surface-hover:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.elevation-1 { box-shadow: var(--shadow-sm); }
+.elevation-2 { box-shadow: var(--shadow-md); }
+.elevation-3 { box-shadow: var(--shadow-lg); }
+
+/* The ruler is the one place where a repeated-line treatment is intentional. */
 .ruler-ticks {
   background-image: repeating-linear-gradient(
     to right,
@@ -193,8 +212,8 @@ button:disabled {
   background-color: #F7C928;
   background-image: repeating-linear-gradient(
     to right,
-    rgba(23, 32, 51, 0.45) 0,
-    rgba(23, 32, 51, 0.45) 1px,
+    rgba(23, 32, 51, 0.42) 0,
+    rgba(23, 32, 51, 0.42) 1px,
     transparent 1px,
     transparent 8px
   );
@@ -203,8 +222,8 @@ button:disabled {
 html.dark .ruler-ticks {
   background-image: repeating-linear-gradient(
     to right,
-    rgba(248, 250, 252, 0.25) 0,
-    rgba(248, 250, 252, 0.25) 1px,
+    rgba(248, 250, 252, 0.24) 0,
+    rgba(248, 250, 252, 0.24) 1px,
     transparent 1px,
     transparent 8px
   );
@@ -214,31 +233,13 @@ html.dark .ruler-fill {
   background-color: #F7C928;
   background-image: repeating-linear-gradient(
     to right,
-    rgba(23, 32, 51, 0.55) 0,
-    rgba(23, 32, 51, 0.55) 1px,
+    rgba(23, 32, 51, 0.52) 0,
+    rgba(23, 32, 51, 0.52) 1px,
     transparent 1px,
     transparent 8px
   );
 }
 
-/* Subtle elevation for the application's major surfaces. */
-.surface-hover {
-  transition:
-    transform 180ms ease,
-    box-shadow 180ms ease,
-    border-color 180ms ease;
-}
-
-.surface-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(16, 24, 40, 0.08);
-}
-
-html.dark .surface-hover:hover {
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.24);
-}
-
-/* Prevent icon-only controls from feeling oversized while preserving their hit area. */
 button[title],
 button[aria-label] {
   -webkit-user-select: none;

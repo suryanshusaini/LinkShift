@@ -31,7 +31,7 @@ function ThemeToggle({ isDark, onToggle, mobile = false }) {
 function Shell({ user, handleLogout, children }) {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [theme, setTheme] = useState(() => localStorage.getItem("linkshift_theme") || "system");
+  const [theme, setTheme] = useState(() => localStorage.getItem("linkshift_theme") || "light");
   const [systemDark, setSystemDark] = useState(() => window.matchMedia("(prefers-color-scheme: dark)").matches);
   const isDark = theme === "dark" || (theme === "system" && systemDark);
 

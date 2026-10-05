@@ -10,7 +10,25 @@ import NotFound from "./NotFound";
 import ForgotPassword from "./ForgotPassword";
 import ResetPassword from "./ResetPassword";
 
-function Shell({ user, setUser, handleLogout, children }) {
+function ThemeToggle({ isDark, onToggle, mobile = false }) {
+  return (
+    <button
+      onClick={onToggle}
+      className={
+        mobile
+          ? "flex w-full items-center gap-2 rounded-xl border border-ink/10 bg-plaster px-3 py-3 text-left font-semibold text-ink hover:border-ink/20 hover:bg-white dark:border-white/10 dark:bg-surface-soft dark:text-text-dark dark:hover:border-white/15 dark:hover:bg-surface-raised"
+          : "inline-flex h-10 items-center gap-2 rounded-full border border-ink/10 bg-plaster px-3 text-slate hover:border-ink/20 hover:bg-white hover:text-ink dark:border-white/10 dark:bg-surface-soft dark:text-slate-dark dark:hover:border-white/15 dark:hover:bg-surface-raised dark:hover:text-text-dark"
+      }
+      aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
+      title={isDark ? "Switch to light theme" : "Switch to dark theme"}
+    >
+      {isDark ? <Sun size={17} strokeWidth={2} /> : <Moon size={17} strokeWidth={2} />}
+      {mobile && (isDark ? "Light theme" : "Dark theme")}
+    </button>
+  );
+}
+
+function Shell({ user, handleLogout, children }) {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem("linkshift_theme") || "system");
@@ -26,49 +44,127 @@ function Shell({ user, setUser, handleLogout, children }) {
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark);
+    document.documentElement.dataset.theme = isDark ? "dark" : "light";
     localStorage.setItem("linkshift_theme", theme);
   }, [isDark, theme]);
 
   useEffect(() => setMobileOpen(false), [location.pathname]);
 
-  const initials = (user?.name || user?.email || "U").split(/[ @]/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
+  const toggleTheme = () => {
+    setTheme(isDark ? "light" : "dark");
+  };
 
   return (
-    <div className="min-h-screen bg-plaster text-ink dark:bg-night dark:text-text-dark">
-      <a href="#main-content" className="sr-only focus:not-sr-only fixed left-4 top-4 z-[100] rounded-md bg-tape px-4 py-2 font-semibold text-ink">Skip to content</a>
-      <nav className="sticky top-0 z-50 h-16 border-b border-ink/12 bg-chalk dark:border-white/14 dark:bg-surface">
-        <div className="mx-auto flex h-full max-w-[1120px] items-center justify-between px-4 sm:px-6">
-          <Link to="/" className="flex items-center gap-2 text-xl font-bold tracking-tight text-ink dark:text-text-dark">
-            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-tape text-ink"><Link2 size={19} strokeWidth={2} /></span>
-            LinkShift
+    <div className="min-h-screen bg-plaster text-ink transition-colors duration-200 dark:bg-night dark:text-text-dark">
+      <a
+        href="#main-content"
+        className="sr-only fixed left-4 top-4 z-[100] rounded-lg bg-tape px-4 py-2 font-semibold text-ink shadow-lg focus:not-sr-only"
+      >
+        Skip to content
+      </a>
+
+      <nav className="sticky top-0 z-50 border-b border-ink/10 bg-chalk/95 shadow-[0_1px_0_rgba(16,24,40,0.03)] backdrop-blur-md dark:border-white/10 dark:bg-surface/95 dark:shadow-[0_1px_0_rgba(0,0,0,0.2)]">
+        <div className="mx-auto flex h-[68px] max-w-[1120px] items-center justify-between px-4 sm:px-6">
+          <Link
+            to="/"
+            className="group flex items-center gap-2.5 text-xl font-bold tracking-tight text-ink dark:text-text-dark"
+          >
+            <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-tape text-ink shadow-sm transition-transform duration-200 group-hover:rotate-[-3deg] group-hover:scale-[1.03]">
+              <Link2 size={19} strokeWidth={2.25} />
+            </span>
+            <span>LinkShift</span>
           </Link>
 
-          <div className="hidden items-center gap-6 md:flex">
+          <div className="hidden items-center gap-3 md:flex">
             {user ? (
               <>
-                <Link to="/dashboard" className={"border-b-2 py-5 text-sm font-semibold " + (location.pathname === "/dashboard" ? "border-tape text-ink dark:text-text-dark" : "border-transparent text-slate dark:text-slate-dark")}>My links</Link>
-                <button onClick={() => setTheme(isDark ? "light" : "dark")} className="rounded-md p-2 text-slate hover:text-ink dark:text-slate-dark dark:hover:text-text-dark" aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}>{isDark ? <Sun size={19}/> : <Moon size={19}/>}</button>
-                <button onClick={handleLogout} className="rounded-[10px] border border-ink/20 bg-chalk px-4 py-2 text-sm font-semibold text-ink hover:bg-plaster dark:border-white/15 dark:bg-surface dark:text-text-dark dark:hover:bg-night">Log out</button>
+                <Link
+                  to="/dashboard"
+                  className={
+                    "relative rounded-lg px-3 py-2 text-sm font-semibold " +
+                    (location.pathname === "/dashboard"
+                      ? "text-ink dark:text-text-dark"
+                      : "text-slate hover:text-ink dark:text-slate-dark dark:hover:text-text-dark")
+                  }
+                >
+                  My links
+                  {location.pathname === "/dashboard" && (
+                    <span className="absolute inset-x-3 -bottom-[14px] h-0.5 rounded-full bg-tape" />
+                  )}
+                </Link>
+                <ThemeToggle isDark={isDark} onToggle={toggleTheme} />
+                <button
+                  onClick={handleLogout}
+                  className="h-10 rounded-full border border-ink/15 bg-chalk px-4 text-sm font-semibold text-ink hover:border-ink/25 hover:bg-plaster dark:border-white/12 dark:bg-surface-soft dark:text-text-dark dark:hover:border-white/20 dark:hover:bg-surface-raised"
+                >
+                  Log out
+                </button>
               </>
             ) : (
               <>
-                <Link to="/login" className="text-sm font-semibold text-slate hover:text-ink dark:text-slate-dark dark:hover:text-text-dark">Log in</Link>
-                <Link to="/signup" className="rounded-[10px] border-[1.5px] border-ink bg-tape px-4 py-2.5 text-sm font-semibold text-ink hover:bg-tape-hover">Sign up</Link>
-                <button onClick={() => setTheme(isDark ? "light" : "dark")} className="rounded-md p-2 text-slate hover:text-ink dark:text-slate-dark dark:hover:text-text-dark" aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}>{isDark ? <Sun size={19}/> : <Moon size={19}/>}</button>
+                <Link
+                  to="/login"
+                  className="rounded-lg px-3 py-2 text-sm font-semibold text-slate hover:text-ink dark:text-slate-dark dark:hover:text-text-dark"
+                >
+                  Log in
+                </Link>
+                <Link
+                  to="/signup"
+                  className="rounded-full border border-ink bg-tape px-5 py-2.5 text-sm font-semibold text-ink shadow-sm hover:border-ink hover:bg-tape-hover hover:shadow-md"
+                >
+                  Sign up
+                </Link>
+                <ThemeToggle isDark={isDark} onToggle={toggleTheme} />
               </>
             )}
           </div>
 
-          <button className="rounded-md p-2 md:hidden" onClick={() => setMobileOpen((value) => !value)} aria-label="Open navigation menu" aria-expanded={mobileOpen}>{mobileOpen ? <X/> : <Menu/>}</button>
+          <button
+            className="rounded-xl border border-ink/10 bg-plaster p-2 text-ink hover:border-ink/20 hover:bg-white dark:border-white/10 dark:bg-surface-soft dark:text-text-dark dark:hover:bg-surface-raised md:hidden"
+            onClick={() => setMobileOpen((value) => !value)}
+            aria-label="Open navigation menu"
+            aria-expanded={mobileOpen}
+          >
+            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </div>
+
         {mobileOpen && (
-          <div className="border-b border-ink/12 bg-chalk px-4 py-4 dark:border-white/14 dark:bg-surface md:hidden">
+          <div className="border-t border-ink/10 bg-chalk px-4 py-4 shadow-lg dark:border-white/10 dark:bg-surface md:hidden">
             <div className="mx-auto flex max-w-[1120px] flex-col gap-2">
-              {user ? <Link to="/dashboard" className="rounded-lg px-3 py-3 font-semibold">My links</Link> : null}
-              <Link to="/login" className="rounded-lg px-3 py-3 font-semibold">Log in</Link>
-              {!user && <Link to="/signup" className="rounded-[10px] border-[1.5px] border-ink bg-tape px-3 py-3 text-center font-semibold">Sign up</Link>}
-              <button onClick={() => setTheme(isDark ? "light" : "dark")} className="flex items-center gap-2 rounded-lg px-3 py-3 text-left font-semibold">{isDark ? <Sun size={18}/> : <Moon size={18}/>} {isDark ? "Light theme" : "Dark theme"}</button>
-              {user && <button onClick={handleLogout} className="rounded-lg px-3 py-3 text-left font-semibold text-stop">Log out</button>}
+              {user ? (
+                <Link
+                  to="/dashboard"
+                  className="rounded-xl px-3 py-3 font-semibold hover:bg-plaster dark:hover:bg-surface-soft"
+                >
+                  My links
+                </Link>
+              ) : null}
+              {!user && (
+                <Link
+                  to="/login"
+                  className="rounded-xl px-3 py-3 font-semibold hover:bg-plaster dark:hover:bg-surface-soft"
+                >
+                  Log in
+                </Link>
+              )}
+              {!user && (
+                <Link
+                  to="/signup"
+                  className="rounded-xl border border-ink bg-tape px-3 py-3 text-center font-semibold text-ink hover:bg-tape-hover"
+                >
+                  Sign up
+                </Link>
+              )}
+              <ThemeToggle isDark={isDark} onToggle={toggleTheme} mobile />
+              {user && (
+                <button
+                  onClick={handleLogout}
+                  className="rounded-xl px-3 py-3 text-left font-semibold text-stop hover:bg-red-50 dark:hover:bg-red-950/20"
+                >
+                  Log out
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -76,8 +172,8 @@ function Shell({ user, setUser, handleLogout, children }) {
 
       <main id="main-content">{children}</main>
 
-      <footer className="border-t border-ink/12 bg-chalk dark:border-white/14 dark:bg-surface">
-        <div className="mx-auto flex max-w-[1120px] flex-col gap-4 px-4 py-7 text-sm text-slate sm:flex-row sm:items-center sm:justify-between sm:px-6 dark:text-slate-dark">
+      <footer className="border-t border-ink/10 bg-chalk dark:border-white/10 dark:bg-surface">
+        <div className="mx-auto flex max-w-[1120px] flex-col gap-4 px-4 py-8 text-sm text-slate sm:flex-row sm:items-center sm:justify-between sm:px-6 dark:text-slate-dark">
           <p>Built by Suryanshu Saini</p>
           <div className="flex flex-wrap gap-5">
             <a href="https://github.com/suryanshusaini/LinkShift" target="_blank" rel="noreferrer" className="hover:text-ink dark:hover:text-text-dark">GitHub</a>
@@ -110,8 +206,20 @@ function App() {
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ""}>
       <BrowserRouter>
-        <Toaster position="bottom-center" toastOptions={{ duration: 4000 }} />
-        <Shell user={user} setUser={setUser} handleLogout={handleLogout}>
+        <Toaster
+          position="bottom-center"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              borderRadius: "12px",
+              border: "1px solid var(--border)",
+              background: "var(--surface)",
+              color: "var(--page-text)",
+              boxShadow: "0 12px 32px rgba(16, 24, 40, 0.12)",
+            },
+          }}
+        />
+        <Shell user={user} handleLogout={handleLogout}>
           <Routes>
             <Route path="/" element={<Home user={user} onLinkCreated={(link) => setSavedLinks((prev) => [link, ...prev])} />} />
             <Route path="/login" element={<Auth mode="login" setUser={setUser} />} />

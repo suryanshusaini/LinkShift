@@ -64,13 +64,13 @@ function Shell({ user, handleLogout, children }) {
         Skip to content
       </a>
 
-      <nav className="sticky top-0 z-50 border-b border-ink/10 bg-chalk/95 shadow-[0_1px_0_rgba(16,24,40,0.03)] backdrop-blur-md dark:border-white/10 dark:bg-surface/95 dark:shadow-[0_1px_0_rgba(0,0,0,0.2)]">
+      <nav className="sticky top-0 z-50 border-b border-ink/10 bg-chalk shadow-[0_1px_2px_rgba(16,24,40,0.05)] dark:border-white/10 dark:bg-surface dark:shadow-[0_1px_2px_rgba(0,0,0,0.2)]">
         <div className="mx-auto flex h-[68px] max-w-[1120px] items-center justify-between px-4 sm:px-6">
           <Link
             to="/"
             className="group flex items-center gap-2.5 text-xl font-bold tracking-tight text-ink dark:text-text-dark"
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-tape text-ink shadow-sm transition-transform duration-200 group-hover:rotate-[-3deg] group-hover:scale-[1.03]">
+            <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-tape text-ink shadow-sm transition-transform duration-200 ">
               <Link2 size={19} strokeWidth={2.25} />
             </span>
             <span>LinkShift</span>
@@ -96,7 +96,7 @@ function Shell({ user, handleLogout, children }) {
                 <ThemeToggle isDark={isDark} onToggle={toggleTheme} />
                 <button
                   onClick={handleLogout}
-                  className="h-10 rounded-full border border-ink/15 bg-chalk px-4 text-sm font-semibold text-ink hover:border-ink/25 hover:bg-plaster dark:border-white/12 dark:bg-surface-soft dark:text-text-dark dark:hover:border-white/20 dark:hover:bg-surface-raised"
+                  className="h-10 rounded-[10px] border border-ink/15 bg-chalk px-4 text-sm font-semibold text-ink hover:border-ink/25 hover:bg-plaster dark:border-white/12 dark:bg-surface-soft dark:text-text-dark dark:hover:border-white/20 dark:hover:bg-surface-raised"
                 >
                   Log out
                 </button>
@@ -111,7 +111,7 @@ function Shell({ user, handleLogout, children }) {
                 </Link>
                 <Link
                   to="/signup"
-                  className="rounded-full border border-ink bg-tape px-5 py-2.5 text-sm font-semibold text-ink shadow-sm hover:border-ink hover:bg-tape-hover hover:shadow-md"
+                  className="rounded-[10px] border border-ink bg-tape px-5 py-2.5 text-sm font-semibold text-ink shadow-sm hover:border-ink hover:bg-tape-hover hover:shadow-md"
                 >
                   Sign up
                 </Link>

@@ -5,6 +5,7 @@ require("dotenv").config();
 
 const validateEnv = require("./config/env");
 const connectDB = require("./config/db");
+const { getRedis, closeRedis } = require("./config/redis");
 
 validateEnv();
 const app = express();
@@ -24,9 +25,13 @@ app.use(express.json({ limit: "32kb" }));
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api", require("./routes/url"));
 
-app.get("/health", (req, res) => {
-  const dbReady = require("mongoose").connection.readyState === 1;
-  res.status(dbReady ? 200 : 503).json({ status: dbReady ? "ok" : "degraded", db: dbReady });
+app.get("/health", async (req, res) => {
+  const mongoose = require("mongoose");
+  const dbReady = mongoose.connection.readyState === 1;
+  const redis = await getRedis();
+  const redisReady = Boolean(redis?.isReady);
+  const ready = dbReady;
+  res.status(ready ? 200 : 503).json({ status: ready ? "ok" : "degraded", db: dbReady, redis: redisReady });
 });
 
 app.use("/", require("./routes/redirect"));
@@ -46,6 +51,7 @@ connectDB().then(() => {
 
 const shutdown = async (signal) => {
   console.log(signal + " received. Shutting down gracefully.");
+  await closeRedis();
   await require("mongoose").connection.close(false);
   process.exit(0);
 };

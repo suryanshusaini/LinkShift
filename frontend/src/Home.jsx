@@ -74,7 +74,7 @@ export default function Home({ user, onLinkCreated }) {
     <div>
       <section className="mx-auto max-w-[1120px] px-4 pb-20 pt-16 sm:px-6 sm:pt-24 lg:pb-24">
         <div className="max-w-[760px]">
-          <p className="mb-4 font-mono text-sm text-slate dark:text-slate-dark">LINKSHIFT / URL SHORTENER</p>
+          <p className="mb-4 font-mono text-sm text-slate dark:text-slate-dark">Link shortener</p>
           <h1 className="max-w-2xl text-[clamp(2.5rem,6vw,4.5rem)] font-bold leading-[1.05] tracking-[-0.02em] text-ink dark:text-text-dark">Long links, cut down to size.</h1>
           <p className="mt-5 max-w-xl text-base leading-7 text-slate sm:text-lg dark:text-slate-dark">Paste a link and get a short one. Create a free account to keep, edit and track your links.</p>
         </div>
@@ -82,10 +82,10 @@ export default function Home({ user, onLinkCreated }) {
         <div className="mt-10 max-w-[760px]">
           {!result ? (
             <form onSubmit={handleShorten}>
-              <div className="flex flex-col gap-2 rounded-[14px] border border-ink/15 bg-chalk p-1.5 shadow-[0_10px_30px_rgba(16,24,40,0.06)] transition-shadow duration-200 hover:shadow-[0_14px_34px_rgba(16,24,40,0.09)] sm:flex-row sm:items-stretch dark:border-white/10 dark:bg-surface dark:text-text-dark dark:shadow-[0_14px_34px_rgba(0,0,0,0.18)]">
+              <div className="flex flex-col gap-2 rounded-[14px] border border-ink/15 bg-chalk p-1.5 shadow-[0_8px_24px_rgba(16,24,40,0.07)] sm:flex-row sm:items-stretch dark:border-white/10 dark:bg-surface dark:text-text-dark dark:shadow-[0_14px_34px_rgba(0,0,0,0.18)]">
                 <label htmlFor="long-url" className="sr-only">Long URL</label>
-                <input id="long-url" type="url" required value={longUrl} onChange={(e) => setLongUrl(e.target.value)} placeholder="https://example.com/very/long/path" className="h-12 min-w-0 flex-1 bg-transparent px-4 text-[15px] text-ink placeholder:text-slate/70 dark:text-text-dark dark:placeholder:text-slate-dark/70 sm:h-[52px]" />
-                <button type="submit" disabled={submitting || !longUrl.trim()} className="h-[52px] rounded-[10px] border-[1.5px] border-ink bg-tape px-6 font-semibold text-ink transition-colors hover:bg-tape-hover disabled:cursor-not-allowed disabled:opacity-50 sm:h-[56px]">{submitting ? "Shortening…" : "Shorten"}</button>
+                <input id="long-url" type="url" required value={longUrl} onChange={(e) => setLongUrl(e.target.value)} placeholder="https://example.com/very/long/path" className="h-[52px] min-w-0 flex-1 bg-transparent px-4 text-[15px] text-ink placeholder:text-slate/70 dark:text-text-dark dark:placeholder:text-slate-dark/70 " />
+                <button type="submit" disabled={submitting || !longUrl.trim()} className="h-[52px] rounded-[10px] border-[1.5px] border-ink bg-tape px-6 font-semibold text-ink transition-colors hover:bg-tape-hover disabled:cursor-not-allowed disabled:opacity-50 ">{submitting ? "Shortening…" : "Shorten"}</button>
               </div>
 
               <div className="mt-2 h-6 overflow-hidden rounded-sm border-y border-ink/10 dark:border-white/10" aria-hidden="true">
@@ -118,7 +118,7 @@ export default function Home({ user, onLinkCreated }) {
               <p className="mt-4 text-sm text-slate dark:text-slate-dark">Free. No card needed.</p>
             </form>
           ) : (
-            <div className="surface-hover rounded-[14px] border border-ink/12 bg-chalk p-6 shadow-[0_8px_24px_rgba(16,24,40,0.05)] dark:border-white/10 dark:bg-surface dark:shadow-[0_14px_34px_rgba(0,0,0,0.16)] sm:p-7">
+            <div className="rounded-[14px] border border-ink/12 bg-chalk p-6 shadow-[0_8px_24px_rgba(16,24,40,0.07)] dark:border-white/10 dark:bg-surface dark:shadow-[0_14px_34px_rgba(0,0,0,0.16)] sm:p-7">
               <p className="text-sm font-semibold text-slate dark:text-slate-dark">Your short link</p>
               <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <a href={shortUrl} target="_blank" rel="noreferrer" className="break-all font-mono text-xl font-medium text-ink underline decoration-tape decoration-2 underline-offset-4 dark:text-text-dark sm:text-[22px]">{shortUrl}</a>
@@ -139,10 +139,25 @@ export default function Home({ user, onLinkCreated }) {
       </section>
 
       <section className="border-y border-ink/12 bg-chalk dark:border-white/14 dark:bg-surface">
-        <div className="mx-auto grid max-w-[1120px] gap-10 px-4 py-16 sm:px-6 lg:grid-cols-3 lg:py-20">
-          <div><h2 className="text-2xl font-bold">How it works</h2><ol className="mt-6 space-y-5 text-slate dark:text-slate-dark"><li><b className="text-ink dark:text-text-dark">01 / Paste.</b> Drop in the long URL.</li><li><b className="text-ink dark:text-text-dark">02 / Shorten.</b> LinkShift cuts it down.</li><li><b className="text-ink dark:text-text-dark">03 / Share.</b> Copy it and track clicks.</li></ol></div>
-          <div><h2 className="text-2xl font-bold">What you get</h2><ul className="mt-6 space-y-3 text-slate dark:text-slate-dark"><li>Click analytics</li><li>Custom aliases</li><li>QR codes</li><li>Edit destinations</li><li>Expiry dates</li></ul></div>
-          <div><h2 className="text-2xl font-bold">FAQ</h2><div className="mt-5 space-y-5 text-sm leading-6 text-slate dark:text-slate-dark"><details><summary className="cursor-pointer font-semibold text-ink dark:text-text-dark">Are links permanent?</summary><p className="mt-2">Unused links are subject to the LinkShift retention policy. Active links remain available while they are being used.</p></details><details><summary className="cursor-pointer font-semibold text-ink dark:text-text-dark">Is it free?</summary><p className="mt-2">Yes. Link creation is available without a paid plan.</p></details><details><summary className="cursor-pointer font-semibold text-ink dark:text-text-dark">What do you store about visitors?</summary><p className="mt-2">Analytics are designed to count clicks without storing raw IP addresses.</p></details></div></div>
+        <div className="mx-auto max-w-[1120px] px-4 py-16 sm:px-6 lg:py-20">
+          <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
+            <div>
+              <h2 className="text-2xl font-bold">How it works</h2>
+              <ol className="mt-6 space-y-5 text-slate dark:text-slate-dark">
+                <li><b className="text-ink dark:text-text-dark">01 / Paste.</b> Drop in the long URL.</li>
+                <li><b className="text-ink dark:text-text-dark">02 / Shorten.</b> LinkShift cuts it down.</li>
+                <li><b className="text-ink dark:text-text-dark">03 / Share.</b> Copy it and track clicks.</li>
+              </ol>
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">FAQ</h2>
+              <div className="mt-6 divide-y divide-ink/10 border-y border-ink/10 dark:divide-white/10 dark:border-white/10">
+                <details className="py-5"><summary className="cursor-pointer font-semibold text-ink dark:text-text-dark">Are links permanent?</summary><p className="mt-2 max-w-2xl text-sm leading-6 text-slate dark:text-slate-dark">Unused links are subject to the LinkShift retention policy. Active links remain available while they are being used.</p></details>
+                <details className="py-5"><summary className="cursor-pointer font-semibold text-ink dark:text-text-dark">Is it free?</summary><p className="mt-2 max-w-2xl text-sm leading-6 text-slate dark:text-slate-dark">Yes. Link creation is available without a paid plan.</p></details>
+                <details className="py-5"><summary className="cursor-pointer font-semibold text-ink dark:text-text-dark">What do you store about visitors?</summary><p className="mt-2 max-w-2xl text-sm leading-6 text-slate dark:text-slate-dark">Analytics are designed to count clicks without storing raw IP addresses.</p></details>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </div>

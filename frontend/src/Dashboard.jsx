@@ -35,12 +35,25 @@ function AnalyticsModal({ link, onClose }) {
 
   const max = Math.max(...(data?.timeline || []).map((point) => point.clicks), 1);
   const timeline = data?.timeline || [];
-  const breakdown = (title, values) => <div className="rounded-[10px] border border-ink/10 p-4 dark:border-white/10"><p className="text-xs font-semibold uppercase tracking-wide text-slate dark:text-slate-dark">{title}</p><div className="mt-3 space-y-2">{(values || []).slice(0, 5).map((item) => <div key={item._id} className="flex items-center justify-between gap-3 text-sm"><span className="truncate text-ink dark:text-text-dark">{item._id || "Unknown"}</span><span className="font-mono text-xs text-slate dark:text-slate-dark">{item.clicks}</span></div>)}{!(values || []).length && <p className="text-sm text-slate dark:text-slate-dark">No data yet.</p>}</div></div>;
+  const breakdown = (title, values) => {
+    const rows = (values || []).slice(0, 5);
+    const peak = Math.max(...rows.map((item) => item.clicks || 0), 1);
+    return <div className="border-t border-ink/10 py-5 first:border-t-0 dark:border-white/10">
+      <div className="flex items-baseline justify-between gap-4"><h3 className="font-semibold">{title}</h3><span className="font-mono text-xs text-slate dark:text-slate-dark">{rows.length} sources</span></div>
+      <div className="mt-3 divide-y divide-ink/8 dark:divide-white/8">
+        {rows.map((item) => <div key={item._id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 py-3 text-sm">
+          <div className="min-w-0"><div className="truncate text-ink dark:text-text-dark">{item._id || "Unknown"}</div><div className="mt-1 h-1.5 overflow-hidden rounded-full bg-plaster dark:bg-surface-soft"><div className="h-full rounded-full bg-tape" style={{width: Math.max(4, Math.round(((item.clicks || 0) / peak) * 100)) + "%"}} /></div></div>
+          <span className="font-mono text-xs text-slate dark:text-slate-dark">{item.clicks}</span>
+        </div>)}
+        {!rows.length && <p className="py-3 text-sm text-slate dark:text-slate-dark">No data yet.</p>}
+      </div>
+    </div>;
+  };
 
   return <Modal title="Link analytics" onClose={onClose} wide>
     <div className="mt-4 flex flex-col gap-3 border-b border-ink/10 pb-5 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0"><a href={SHORT_BASE + "/" + link.shortId} target="_blank" rel="noreferrer" className="break-all font-mono text-sm font-semibold text-signal">{SHORT_BASE}/{link.shortId}</a><p className="mt-1 truncate text-sm text-slate dark:text-slate-dark">{link.originalUrl}</p></div>
-      <select value={days} onChange={(e) => setDays(Number(e.target.value))} className="h-10 rounded-[8px] border border-ink/15 bg-chalk px-3 text-sm dark:border-white/15 dark:bg-surface"><option value="7">Last 7 days</option><option value="14">Last 14 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option></select>
+      <select value={days} onChange={(e) => setDays(Number(e.target.value))} className="h-10 rounded-[8px] border border-ink/20 bg-chalk px-3 text-sm dark:border-white/15 dark:bg-surface"><option value="7">Last 7 days</option><option value="14">Last 14 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option></select>
     </div>
     {loading ? <div className="py-16 text-center text-slate dark:text-slate-dark">Loading analytics…</div> : <div className="mt-5">
       <div className="grid gap-px overflow-hidden rounded-[10px] border border-ink/10 bg-ink/10 sm:grid-cols-3 dark:border-white/10 dark:bg-white/10">
@@ -52,7 +65,7 @@ function AnalyticsModal({ link, onClose }) {
         <div className="flex items-center justify-between"><h3 className="font-semibold">Clicks over time</h3><span className="font-mono text-xs text-slate dark:text-slate-dark">{days}d</span></div>
         {timeline.length ? <div className="mt-5 flex h-44 items-end gap-1 overflow-x-auto">{timeline.map((point) => <div key={point._id} className="group flex min-w-[18px] flex-1 flex-col items-center justify-end gap-1"><div title={point._id + ": " + point.clicks} className="w-full max-w-7 rounded-t-sm bg-tape" style={{ height: Math.max(4, Math.round((point.clicks / max) * 120)) }} /><span className="font-mono text-[9px] text-slate dark:text-slate-dark">{point._id.slice(5)}</span></div>)}</div> : <div className="py-12 text-center text-sm text-slate dark:text-slate-dark">No clicks recorded in this period.</div>}
       </div>
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">{breakdown("Referrers", data.referrers)}{breakdown("Devices", data.devices)}{breakdown("Browsers", data.browsers)}{breakdown("Operating systems", data.operatingSystems)}</div>
+      <div className="mt-5 rounded-[12px] border border-ink/10 px-5 dark:border-white/10">{breakdown("Referrers", data.referrers)}{breakdown("Devices", data.devices)}{breakdown("Browsers", data.browsers)}{breakdown("Operating systems", data.operatingSystems)}</div>
       <p className="mt-4 text-xs leading-5 text-slate dark:text-slate-dark">Analytics stores aggregate click metadata without storing visitor IP addresses.</p>
     </div>}
   </Modal>;
@@ -160,7 +173,7 @@ export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted 
     </div>
 
     <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-      <label className="relative flex-1"><Search size={18} className="absolute left-3 top-3.5 text-slate"/><input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Search URL or alias" className="h-12 w-full rounded-[10px] border border-ink/20 bg-chalk pl-10 pr-3 text-sm dark:border-white/15 dark:bg-surface dark:text-text-dark" /></label>
+      <label className="relative flex-1"><Search size={18} className="absolute left-3 top-3.5 text-slate"/><input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Search URL or alias" className="h-12 w-full rounded-[10px] border border-ink/25 bg-chalk pl-10 pr-3 text-sm dark:border-white/15 dark:bg-surface dark:text-text-dark" /></label>
       <label className="flex h-12 items-center gap-2 rounded-[10px] border border-ink/20 bg-chalk px-3 dark:border-white/15 dark:bg-surface"><Filter size={17}/><select value={status} onChange={(e)=>setStatus(e.target.value)} className="bg-transparent text-sm"><option value="all">All status</option><option value="active">Active</option><option value="disabled">Disabled</option><option value="expiring">Expiring soon</option><option value="expired">Expired</option></select></label>
       <select value={sort} onChange={(e)=>setSort(e.target.value)} className="h-12 rounded-[10px] border border-ink/20 bg-chalk px-3 text-sm dark:border-white/15 dark:bg-surface"><option value="newest">Newest</option><option value="oldest">Oldest</option><option value="clicks">Most clicks</option><option value="updated">Recently updated</option></select>
     </div>

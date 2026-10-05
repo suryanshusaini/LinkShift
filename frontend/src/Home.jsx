@@ -1,251 +1,150 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import { Check, ChevronDown, Copy, ExternalLink, QrCode, RefreshCw, X } from "lucide-react";
+
+const API = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+const SHORT_BASE = (import.meta.env.VITE_SHORT_BASE_URL || API).replace(/\/$/, "");
 
 export default function Home({ user, onLinkCreated }) {
   const [longUrl, setLongUrl] = useState("");
-  const [customAlias, setCustomAlias] = useState("");
-  const [showCustom, setShowCustom] = useState(false);
-  const [shortUrl, setShortUrl] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [alias, setAlias] = useState("");
+  const [expiresAt, setExpiresAt] = useState("");
+  const [optionsOpen, setOptionsOpen] = useState(false);
+  const [aliasState, setAliasState] = useState({ status: "idle", message: "" });
+  const [result, setResult] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
 
-  const handleShorten = async (e) => {
-    e.preventDefault();
-    if (!longUrl) return;
-    setIsSubmitting(true);
+  const length = longUrl.length;
+  const rulerWidth = Math.min(length / 150, 1) * 100;
 
+  useEffect(() => {
+    if (!alias.trim()) { setAliasState({ status: "idle", message: "" }); return undefined; }
+    const timer = setTimeout(async () => {
+      const value = alias.trim();
+      if (!/^[A-Za-z0-9_-]{3,30}$/.test(value)) { setAliasState({ status: "taken", message: "Use 3–30 letters, numbers, hyphens or underscores." }); return; }
+      setAliasState({ status: "checking", message: "Checking…" });
+      try {
+        const response = await fetch(API + "/api/alias/check?alias=" + encodeURIComponent(value));
+        const data = await response.json();
+        setAliasState(data.available ? { status: "available", message: "Available" } : { status: "taken", message: data.error || "Taken, try another" });
+      } catch { setAliasState({ status: "idle", message: "" }); }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [alias]);
+
+  const shortUrl = useMemo(() => result ? (result.shortUrl || SHORT_BASE + "/" + result.shortId) : "", [result]);
+  const shortening = result ? Math.max(0, result.sourceLength - shortUrl.length) : 0;
+  const percent = result?.sourceLength ? Math.max(0, Math.round((shortening / result.sourceLength) * 100)) : 0;
+
+  const handleShorten = async (event) => {
+    event.preventDefault();
+    if (!longUrl.trim()) return;
+    setSubmitting(true);
     try {
       const token = localStorage.getItem("token");
       const headers = { "Content-Type": "application/json" };
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/shorten`,
-        {
-          method: "POST",
-          headers: headers,
-          body: JSON.stringify({
-            originalUrl: longUrl,
-            customAlias: customAlias.trim(),
-          }),
-        },
-      );
-
+      if (token) headers.Authorization = "Bearer " + token;
+      const response = await fetch(API + "/api/shorten", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ originalUrl: longUrl.trim(), customAlias: alias.trim() || undefined, expiresAt: expiresAt || undefined }),
+      });
       const data = await response.json();
-
-      if (!response.ok) {
-        toast.error(data.error || "Failed to shorten link");
-        return;
-      }
-
-      setShortUrl(`${import.meta.env.VITE_API_URL}/${data.shortId}`);
-      toast.success("Link shortened successfully!");
-
-      // Instantly update Dashboard without requiring a page refresh
-      if (onLinkCreated) onLinkCreated(data);
-
-      setCustomAlias("");
-      setShowCustom(false);
-      setLongUrl("");
+      if (!response.ok) throw new Error(data.error || "Could not shorten this link.");
+      const created = { ...data, sourceLength: longUrl.trim().length };
+      setResult(created);
+      onLinkCreated?.(created);
+      setLongUrl(""); setAlias(""); setExpiresAt(""); setOptionsOpen(false); setCopied(false); setQrOpen(false);
     } catch (error) {
-      toast.error("Failed to shorten link");
-    } finally {
-      setIsSubmitting(false);
-    }
+      toast.error(error.message || "Could not shorten this link.");
+    } finally { setSubmitting(false); }
   };
 
-  const handleCopy = (text) => {
-    navigator.clipboard.writeText(text);
-    toast.success("Copied to clipboard!");
+  const copyLink = async () => {
+    await navigator.clipboard.writeText(shortUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
   };
+
+  const reset = () => { setResult(null); setLongUrl(""); setAlias(""); setExpiresAt(""); setOptionsOpen(false); setQrOpen(false); };
 
   return (
-    <main className="max-w-6xl mx-auto mt-16 px-6 lg:mt-24 pb-24">
-      <div className="grid lg:grid-cols-2 gap-16 items-center">
-        <div className="max-w-2xl text-center lg:text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-sm font-medium text-slate-600 mb-6">
-            <span className="flex h-2 w-2 rounded-full bg-blue-500"></span>
-            LinkShift v1.0
-          </div>
+    <div>
+      <section className="mx-auto max-w-[1120px] px-4 pb-20 pt-16 sm:px-6 sm:pt-24 lg:pb-24">
+        <div className="max-w-[760px]">
+          <p className="mb-4 font-mono text-sm text-slate dark:text-slate-dark">LINKSHIFT / URL SHORTENER</p>
+          <h1 className="max-w-2xl text-[clamp(2.5rem,6vw,4.5rem)] font-bold leading-[1.05] tracking-[-0.02em] text-ink dark:text-text-dark">Long links, cut down to size.</h1>
+          <p className="mt-5 max-w-xl text-base leading-7 text-slate sm:text-lg dark:text-slate-dark">Paste a link and get a short one. Create a free account to keep, edit and track your links.</p>
+        </div>
 
-          <h1 className="text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 mb-6 leading-tight">
-            Meet Your New <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-              URL Shortcut!
-            </span>
-          </h1>
+        <div className="mt-10 max-w-[760px]">
+          {!result ? (
+            <form onSubmit={handleShorten}>
+              <div className="flex flex-col gap-2 rounded-[12px] border-2 border-ink bg-chalk p-1.5 sm:flex-row sm:items-stretch dark:bg-surface dark:text-text-dark">
+                <label htmlFor="long-url" className="sr-only">Long URL</label>
+                <input id="long-url" type="url" required value={longUrl} onChange={(e) => setLongUrl(e.target.value)} placeholder="https://example.com/very/long/path" className="h-12 min-w-0 flex-1 bg-transparent px-4 text-[15px] text-ink placeholder:text-slate/70 dark:text-text-dark dark:placeholder:text-slate-dark/70 sm:h-[52px]" />
+                <button type="submit" disabled={submitting || !longUrl.trim()} className="h-[52px] rounded-[10px] border-[1.5px] border-ink bg-tape px-6 font-semibold text-ink transition-colors hover:bg-tape-hover disabled:cursor-not-allowed disabled:opacity-50 sm:h-[56px]">{submitting ? "Shortening…" : "Shorten"}</button>
+              </div>
 
-          <p className="text-lg text-slate-500 mb-8 leading-relaxed max-w-lg mx-auto lg:mx-0">
-            Take control of your links with LinkShift, the all-in-one platform
-            designed to simplify link management, track analytics, and drive
-            engagement.
-          </p>
+              <div className="mt-2 h-6 overflow-hidden rounded-sm border-y border-ink/10 dark:border-white/10" aria-hidden="true">
+                <div className="relative h-full ruler-ticks transition-[width] duration-150 ease-out" style={{ width: Math.max(rulerWidth, length ? 4 : 0) + "%" }}>
+                  <div className="absolute inset-y-0 right-0 w-1 bg-tape" />
+                </div>
+              </div>
+              <div className="flex justify-end font-mono text-xs text-slate dark:text-slate-dark">{length} characters</div>
 
-          {!user && (
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <a
-                href="/signup"
-                className="px-8 py-4 bg-slate-900 text-white rounded-xl font-semibold hover:bg-slate-800 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-              >
-                Simplify Your Links
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M14 5l7 7m0 0l-7 7m7-7H3"
-                  ></path>
-                </svg>
-              </a>
-              <p className="text-sm text-slate-400 self-center">
-                Start for Free! No Card Required
-              </p>
+              <div className="mt-5 border-b border-ink/12 pb-5 dark:border-white/14">
+                <button type="button" onClick={() => setOptionsOpen((value) => !value)} className="flex items-center gap-2 text-sm font-semibold text-ink dark:text-text-dark"><ChevronDown size={17} className={optionsOpen ? "rotate-180 transition-transform" : "transition-transform"}/> Options</button>
+                {optionsOpen && (
+                  <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                    <div className="sm:col-span-2">
+                      <label htmlFor="alias" className="mb-1.5 block text-sm font-semibold">Custom alias</label>
+                      <div className="flex h-12 overflow-hidden rounded-[10px] border border-ink/20 bg-chalk dark:border-white/15 dark:bg-surface">
+                        <span className="flex items-center border-r border-ink/10 px-3 font-mono text-xs text-slate dark:border-white/10 dark:text-slate-dark">{SHORT_BASE}/</span>
+                        <input id="alias" value={alias} onChange={(e) => setAlias(e.target.value)} placeholder="my-link" className="min-w-0 flex-1 bg-transparent px-3 text-sm" />
+                      </div>
+                      <p className={"mt-1.5 text-xs " + (aliasState.status === "available" ? "text-go" : aliasState.status === "taken" ? "text-stop" : "text-slate dark:text-slate-dark")}>{aliasState.message}</p>
+                    </div>
+                    <div>
+                      <label htmlFor="expiry" className="mb-1.5 block text-sm font-semibold">Expiry date <span className="font-normal text-slate">(account only)</span></label>
+                      <input id="expiry" type="date" value={expiresAt} disabled={!user} onChange={(e) => setExpiresAt(e.target.value)} className="h-12 w-full rounded-[10px] border border-ink/20 bg-chalk px-3 text-sm disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/15 dark:bg-surface" />
+                    </div>
+                    <p className="self-end text-sm leading-6 text-slate dark:text-slate-dark">{user ? "Set an expiry date when you need the link to stop working." : "Sign in to set an expiry date and manage the link later."}</p>
+                  </div>
+                )}
+              </div>
+              <p className="mt-4 text-sm text-slate dark:text-slate-dark">Free. No card needed.</p>
+            </form>
+          ) : (
+            <div className="rounded-[14px] border border-ink/12 bg-chalk p-6 dark:border-white/14 dark:bg-surface sm:p-7">
+              <p className="text-sm font-semibold text-slate dark:text-slate-dark">Your short link</p>
+              <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <a href={shortUrl} target="_blank" rel="noreferrer" className="break-all font-mono text-xl font-medium text-ink underline decoration-tape decoration-2 underline-offset-4 dark:text-text-dark sm:text-[22px]">{shortUrl}</a>
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={copyLink} className="inline-flex min-h-11 items-center gap-2 rounded-[10px] border-[1.5px] border-ink bg-tape px-4 font-semibold text-ink hover:bg-tape-hover">{copied ? <Check size={17}/> : <Copy size={17}/>} {copied ? "Copied" : "Copy"}</button>
+                  <button onClick={() => setQrOpen((value) => !value)} className="inline-flex min-h-11 items-center gap-2 rounded-[10px] border border-ink/20 bg-chalk px-4 font-semibold dark:border-white/15 dark:bg-surface"><QrCode size={17}/> QR</button>
+                  <a href={shortUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-[10px] border border-ink/20 bg-chalk px-4 font-semibold dark:border-white/15 dark:bg-surface"><ExternalLink size={17}/> Open</a>
+                </div>
+              </div>
+              <p className="mt-5 font-mono text-sm text-slate dark:text-slate-dark">{result.sourceLength} to {shortUrl.length} characters, {percent}% shorter.</p>
+              {qrOpen && <div className="mt-5 rounded-[10px] border border-ink/12 p-4 dark:border-white/14"><img src={"https://quickchart.io/qr?text=" + encodeURIComponent(shortUrl) + "&size=160"} alt="QR code for your short link" width="160" height="160" className="h-40 w-40" /><a className="mt-3 inline-block text-sm font-semibold text-signal" href={"https://quickchart.io/qr?text=" + encodeURIComponent(shortUrl) + "&size=600&format=png"} target="_blank" rel="noreferrer">Open QR image</a></div>}
+              <button onClick={reset} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-slate hover:text-ink dark:text-slate-dark dark:hover:text-text-dark"><RefreshCw size={16}/> Shorten another</button>
             </div>
           )}
         </div>
 
-        <div className="relative">
-          <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-[2.5rem] blur-xl opacity-20"></div>
+        {result && !user && <p className="mt-4 max-w-[760px] text-sm text-slate dark:text-slate-dark">You can make 10 links every 15 minutes without an account. <a href="/signup" className="font-semibold text-ink underline decoration-tape underline-offset-2 dark:text-text-dark">Sign up</a> to keep, edit and track them.</p>}
+      </section>
 
-          <div className="relative bg-white/80 backdrop-blur-xl border border-slate-200/60 p-8 sm:p-10 rounded-[2rem] shadow-2xl">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-bold text-slate-900">
-                Create Short Link
-              </h3>
-
-              <button
-                type="button"
-                onClick={() => setShowCustom(!showCustom)}
-                className={`text-sm font-medium px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${showCustom ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                  ></path>
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  ></path>
-                </svg>
-                Customize
-              </button>
-            </div>
-
-            <form onSubmit={handleShorten} className="mb-6 space-y-4">
-              <div className="relative flex items-center bg-slate-50 border border-slate-200 rounded-2xl p-1.5 focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:border-blue-400 transition-all">
-                <div className="pl-4 text-slate-400">
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-                    ></path>
-                  </svg>
-                </div>
-                <input
-                  type="url"
-                  placeholder="Paste a link to shorten it!"
-                  className="w-full bg-transparent px-3 py-3 text-slate-700 placeholder-slate-400 focus:outline-none"
-                  value={longUrl}
-                  onChange={(e) => setLongUrl(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div
-                className={`overflow-hidden transition-all duration-300 ease-in-out ${showCustom ? "max-h-20 opacity-100" : "max-h-0 opacity-0"}`}
-              >
-                <div className="flex items-center w-full bg-slate-50/50 border border-slate-200 rounded-2xl px-4 py-3.5 focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-500/10 transition-all">
-                  <span className="text-slate-400 text-sm whitespace-nowrap select-none">
-                    {import.meta.env.VITE_API_URL}/
-                  </span>
-                  <input
-                    type="text"
-                    placeholder="my-custom-alias"
-                    className="flex-1 bg-transparent text-slate-700 outline-none min-w-0 placeholder:text-slate-400 pl-1"
-                    value={customAlias}
-                    onChange={(e) => setCustomAlias(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-blue-600 hover:bg-blue-700 hover:shadow-md text-white px-6 py-4 rounded-xl font-semibold transition-all duration-300 ease-in-out shadow-sm disabled:bg-blue-300 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? "Shortening..." : "Shorten Link"}
-              </button>
-            </form>
-
-            {shortUrl && (
-              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 flex flex-col gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-blue-100 text-blue-600 p-2 rounded-lg">
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M13 10V3L4 14h7v7l9-11h-7z"
-                        ></path>
-                      </svg>
-                    </div>
-                    <div className="overflow-hidden flex-1">
-                      <p className="text-slate-900 font-bold truncate text-lg">
-                        {shortUrl}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2 mt-2">
-                    <button
-                      onClick={() => handleCopy(shortUrl)}
-                      className="flex-1 bg-white border border-slate-200 text-slate-700 font-medium py-2.5 rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 shadow-sm"
-                    >
-                      Copy
-                    </button>
-                    <a
-                      href={shortUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 bg-slate-900 text-white font-medium py-2.5 rounded-xl hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 shadow-sm"
-                    >
-                      Test
-                    </a>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+      <section className="border-y border-ink/12 bg-chalk dark:border-white/14 dark:bg-surface">
+        <div className="mx-auto grid max-w-[1120px] gap-10 px-4 py-16 sm:px-6 lg:grid-cols-3 lg:py-20">
+          <div><h2 className="text-2xl font-bold">How it works</h2><ol className="mt-6 space-y-5 text-slate dark:text-slate-dark"><li><b className="text-ink dark:text-text-dark">01 / Paste.</b> Drop in the long URL.</li><li><b className="text-ink dark:text-text-dark">02 / Shorten.</b> LinkShift cuts it down.</li><li><b className="text-ink dark:text-text-dark">03 / Share.</b> Copy it and track clicks.</li></ol></div>
+          <div><h2 className="text-2xl font-bold">What you get</h2><ul className="mt-6 space-y-3 text-slate dark:text-slate-dark"><li>Click analytics</li><li>Custom aliases</li><li>QR codes</li><li>Edit destinations</li><li>Expiry dates</li></ul></div>
+          <div><h2 className="text-2xl font-bold">FAQ</h2><div className="mt-5 space-y-5 text-sm leading-6 text-slate dark:text-slate-dark"><details><summary className="cursor-pointer font-semibold text-ink dark:text-text-dark">Are links permanent?</summary><p className="mt-2">Unused links are subject to the LinkShift retention policy. Active links remain available while they are being used.</p></details><details><summary className="cursor-pointer font-semibold text-ink dark:text-text-dark">Is it free?</summary><p className="mt-2">Yes. Link creation is available without a paid plan.</p></details><details><summary className="cursor-pointer font-semibold text-ink dark:text-text-dark">What do you store about visitors?</summary><p className="mt-2">Analytics are designed to count clicks without storing raw IP addresses.</p></details></div></div>
         </div>
-      </div>
-    </main>
+      </section>
+    </div>
   );
 }

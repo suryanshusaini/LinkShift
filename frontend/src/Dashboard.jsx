@@ -154,22 +154,29 @@ export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted 
     finally { setDeletingAccount(false); }
   };
 
-  const actionButtons = (link) => <div className="flex justify-end gap-1">
-    <button onClick={() => setAnalytics(link)} className="rounded-md p-2 hover:bg-plaster dark:hover:bg-night" title="Analytics"><BarChart3 size={17}/></button>
-    <button onClick={() => copy(link)} className="rounded-md p-2 hover:bg-plaster dark:hover:bg-night" title="Copy"><Copy size={17}/></button>
-    <button onClick={() => setQr(link)} className="rounded-md p-2 hover:bg-plaster dark:hover:bg-night" title="QR code"><QrCode size={17}/></button>
-    <button onClick={() => setEditing(link)} className="rounded-md p-2 hover:bg-plaster dark:hover:bg-night" title="Edit"><Edit3 size={17}/></button>
-    <button onClick={() => setDeleteTarget(link)} className="rounded-md p-2 text-stop hover:bg-red-50 dark:hover:bg-red-950/20" title="Delete"><Trash2 size={17}/></button>
+  const actionButtons = (link) => <div className="flex justify-end items-center gap-0.5">
+    <a href={SHORT_BASE + "/" + link.shortId} target="_blank" rel="noreferrer" className="p-2 text-slate hover:text-ink dark:text-slate-dark dark:hover:text-text-dark" title="Open link"><ExternalLink size={16}/></a>
+    <button onClick={() => setAnalytics(link)} className="p-2 text-slate hover:text-ink dark:text-slate-dark dark:hover:text-text-dark" title="Analytics"><BarChart3 size={16}/></button>
+    <button onClick={() => copy(link)} className="p-2 text-slate hover:text-ink dark:text-slate-dark dark:hover:text-text-dark" title="Copy short link"><Copy size={16}/></button>
+    <button onClick={() => setQr(link)} className="p-2 text-slate hover:text-ink dark:text-slate-dark dark:hover:text-text-dark" title="QR code"><QrCode size={16}/></button>
+    <button onClick={() => setEditing(link)} className="p-2 text-slate hover:text-ink dark:text-slate-dark dark:hover:text-text-dark" title="Edit"><Edit3 size={16}/></button>
+    <button onClick={() => setDeleteTarget(link)} className="p-2 text-stop/75 hover:text-stop" title="Delete"><Trash2 size={16}/></button>
   </div>;
 
-  return <section className="mx-auto max-w-[1120px] px-4 py-10 sm:px-6 lg:py-14">
-    <div className="flex flex-col gap-7 border-b border-ink/12 pb-7 dark:border-white/14 sm:flex-row sm:items-end sm:justify-between">
-      <div><p className="font-mono text-xs text-slate dark:text-slate-dark">My links</p><h1 className="mt-2 text-4xl font-bold tracking-tight text-ink dark:text-text-dark">Your links.</h1><p className="mt-2 text-slate dark:text-slate-dark">Manage destinations, status, expiry and clicks.</p></div>
-      <Link to="/" className="inline-flex h-11 items-center justify-center rounded-[10px] border-[1.5px] border-ink bg-tape px-5 font-semibold text-ink hover:bg-tape-hover">Create link</Link>
+  return <section className="mx-auto max-w-[1160px] px-4 py-10 sm:px-6 lg:py-14">
+    <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-slate dark:text-slate-dark">Workspace</p>
+        <h1 className="mt-2 text-[clamp(2.5rem,5vw,4rem)] font-bold leading-none tracking-[-0.04em] text-ink dark:text-text-dark">My links</h1>
+        <p className="mt-3 text-base text-slate dark:text-slate-dark">Manage, monitor and share every shortcut from one place.</p>
+      </div>
+      <Link to="/" className="inline-flex h-11 items-center justify-center rounded-[10px] border-[1.5px] border-ink bg-tape px-5 font-semibold text-ink shadow-[0_4px_0_rgba(32,26,22,0.12)] hover:bg-tape-hover">Create link</Link>
     </div>
 
-    <div className="mt-7 grid gap-px overflow-hidden rounded-[14px] border border-ink/10 bg-ink/8 shadow-sm dark:border-white/10 dark:bg-white/7 sm:grid-cols-3">
-      {[{label:"Total links",value:total},{label:"Active on this page",value:activeCount},{label:"Clicks on this page",value:totalClicks}].map((stat)=><div key={stat.label} className="bg-chalk px-5 py-5 dark:bg-surface"><p className="text-sm text-slate dark:text-slate-dark">{stat.label}</p><p className="mt-1 font-mono text-2xl font-semibold text-ink dark:text-text-dark">{stat.value}</p></div>)}
+    <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-4 text-sm">
+      <div><span className="text-slate dark:text-slate-dark">Total</span><span className="ml-2 font-mono font-semibold text-ink dark:text-text-dark">{total}</span></div>
+      <div><span className="text-slate dark:text-slate-dark">Active</span><span className="ml-2 font-mono font-semibold text-go">{activeCount}</span></div>
+      <div><span className="text-slate dark:text-slate-dark">Clicks</span><span className="ml-2 font-mono font-semibold text-ink dark:text-text-dark">{totalClicks}</span></div>
     </div>
 
     <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -178,13 +185,14 @@ export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted 
       <select value={sort} onChange={(e)=>setSort(e.target.value)} className="h-12 rounded-[10px] border border-ink/20 bg-chalk px-3 text-sm dark:border-white/15 dark:bg-surface"><option value="newest">Newest</option><option value="oldest">Oldest</option><option value="clicks">Most clicks</option><option value="updated">Recently updated</option></select>
     </div>
 
-    <div className="mt-5 overflow-hidden rounded-[14px] border border-ink/10 bg-chalk shadow-[0_10px_28px_rgba(16,24,40,0.045)] dark:border-white/10 dark:bg-surface dark:shadow-[0_14px_34px_rgba(0,0,0,0.16)]">
+    <div className="mt-5 overflow-hidden rounded-[16px] border border-ink/10 bg-chalk shadow-[0_14px_36px_rgba(45,31,20,0.07)] dark:border-white/10 dark:bg-surface dark:shadow-[0_16px_40px_rgba(0,0,0,0.2)]">
       {loading ? <div className="px-6 py-16 text-center text-slate dark:text-slate-dark">Loading links…</div> : items.length === 0 ? <div className="px-6 py-16 text-center"><p className="font-semibold text-ink dark:text-text-dark">No links match these filters.</p><Link to="/" className="mt-2 inline-block text-sm font-semibold text-signal">Create a new link →</Link></div> : <>
-        <div className="hidden overflow-x-auto md:block"><table className="w-full min-w-[900px] text-left"><thead className="border-b border-ink/10 bg-plaster/70 dark:border-white/10 dark:bg-night/30"><tr className="text-xs font-semibold text-slate dark:text-slate-dark"><th className="px-5 py-4">Link</th><th className="px-5 py-4">Status</th><th className="px-5 py-4">Created</th><th className="px-5 py-4">Clicks</th><th className="px-5 py-4">Expiry</th><th className="px-5 py-4 text-right">Actions</th></tr></thead><tbody className="divide-y divide-ink/10 dark:divide-white/10">{items.map((link)=><tr key={link._id} className="align-top hover:bg-plaster/50 dark:hover:bg-night/30">
+        <div className="hidden overflow-x-auto md:block"><table className="w-full min-w-[980px] text-left"><thead className="bg-plaster/55 dark:bg-night/25"><tr className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate dark:text-slate-dark"><th className="px-5 py-4">Link</th><th className="px-5 py-4">Status</th><th className="px-5 py-4">Created</th><th className="px-5 py-4">Clicks</th><th className="px-5 py-4">Activity</th><th className="px-5 py-4">Expiry</th><th className="px-5 py-4 text-right">Actions</th></tr></thead><tbody>{items.map((link)=><tr key={link._id} className="align-top transition-colors hover:bg-plaster/45 dark:hover:bg-night/25">
           <td className="max-w-[360px] px-5 py-5"><a href={SHORT_BASE+"/"+link.shortId} target="_blank" rel="noreferrer" className="font-mono font-semibold text-signal hover:underline">{SHORT_BASE}/{link.shortId}</a><p className="mt-1 truncate text-sm text-slate dark:text-slate-dark" title={link.originalUrl}>{link.originalUrl}</p></td>
           <td className="px-5 py-5"><button onClick={()=>toggle(link)} className="inline-flex items-center gap-2 text-sm font-semibold"><span className={"h-2 w-2 rounded-full "+(link.isActive ? "bg-go" : "bg-slate")}/>{link.isActive ? "Active" : "Disabled"}</button></td>
           <td className="px-5 py-5 text-sm text-slate dark:text-slate-dark">{formatDate(link.createdAt)}</td>
-          <td className="px-5 py-5 font-mono text-sm font-semibold">{link.clicks || 0}</td>
+          <td className="px-5 py-5"><span className="font-mono text-sm font-semibold text-ink dark:text-text-dark">{link.clicks || 0}</span>{link.clicks > 0 && <span className="ml-2 text-xs text-slate dark:text-slate-dark">clicks</span>}</td>
+          <td className="px-5 py-5 text-sm text-slate dark:text-slate-dark">{link.lastAccessedAt ? formatDate(link.lastAccessedAt) : "No activity"}</td>
           <td className="px-5 py-5 text-sm text-slate dark:text-slate-dark">{link.expiresAt ? formatDate(link.expiresAt) : "Never"}</td>
           <td className="px-5 py-5">{actionButtons(link)}</td>
         </tr>)}</tbody></table></div>
@@ -192,9 +200,9 @@ export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted 
       </>}
     </div>
 
-    <div className="mt-5 flex items-center justify-between"><p className="font-mono text-xs text-slate dark:text-slate-dark">Page {page} of {pages}</p><div className="flex gap-2"><button disabled={page<=1} onClick={()=>setPage((value)=>value-1)} className="h-10 rounded-[8px] border border-ink/15 px-4 text-sm font-semibold disabled:opacity-40 dark:border-white/15">Previous</button><button disabled={page>=pages} onClick={()=>setPage((value)=>value+1)} className="h-10 rounded-[8px] border border-ink/15 px-4 text-sm font-semibold disabled:opacity-40 dark:border-white/15">Next</button></div></div>
+    <div className="mt-5 flex items-center justify-between"><p className="text-xs text-slate dark:text-slate-dark">Page {page} of {pages}</p><div className="flex gap-2"><button disabled={page<=1} onClick={()=>setPage((value)=>value-1)} className="h-10 rounded-[8px] border border-ink/15 px-4 text-sm font-semibold disabled:opacity-40 dark:border-white/15">Previous</button><button disabled={page>=pages} onClick={()=>setPage((value)=>value+1)} className="h-10 rounded-[8px] border border-ink/15 px-4 text-sm font-semibold disabled:opacity-40 dark:border-white/15">Next</button></div></div>
 
-    <div className="mt-16 border-t border-stop/20 pt-7"><p className="font-mono text-xs text-stop">Account</p><div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-semibold text-ink dark:text-text-dark">Delete your account</h2><p className="mt-1 text-sm text-slate dark:text-slate-dark">Permanently removes your account and all links.</p></div><button disabled={deletingAccount} onClick={deleteAccount} className="h-11 rounded-[10px] border border-stop/40 px-4 font-semibold text-stop disabled:opacity-50">{deletingAccount?"Deleting…":"Delete account"}</button></div></div>
+    <div className="mt-16 pt-2"><p className="font-mono text-xs text-stop">Account</p><div className="mt-4 flex flex-col gap-4 rounded-[12px] border border-stop/15 bg-stop/[0.025] p-5 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-semibold text-ink dark:text-text-dark">Delete your account</h2><p className="mt-1 text-sm text-slate dark:text-slate-dark">Permanently removes your account and all links.</p></div><button disabled={deletingAccount} onClick={deleteAccount} className="h-11 rounded-[10px] border border-stop/40 px-4 font-semibold text-stop disabled:opacity-50">{deletingAccount?"Deleting…":"Delete account"}</button></div></div>
 
     {analytics && <AnalyticsModal link={analytics} onClose={()=>setAnalytics(null)}/>}
     {editing && <Modal title="Edit link" onClose={()=>setEditing(null)}><form onSubmit={saveEdit} className="mt-6 space-y-4"><div><label className="mb-1.5 block text-sm font-semibold">Destination URL</label><input name="originalUrl" type="url" required defaultValue={editing.originalUrl} className="h-12 w-full rounded-[10px] border border-ink/20 bg-chalk px-3 text-sm dark:border-white/15 dark:bg-surface"/></div><div><label className="mb-1.5 block text-sm font-semibold">Custom alias</label><div className="flex h-12 overflow-hidden rounded-[10px] border border-ink/20 dark:border-white/15"><span className="flex items-center border-r border-ink/10 px-3 font-mono text-xs text-slate dark:border-white/10 dark:text-slate-dark">{SHORT_BASE}/</span><input name="customAlias" required defaultValue={editing.shortId} className="min-w-0 flex-1 bg-transparent px-3 text-sm"/></div></div><div><label className="mb-1.5 block text-sm font-semibold">Expiry</label><input name="expiresAt" type="date" defaultValue={dateInput(editing.expiresAt)} className="h-12 w-full rounded-[10px] border border-ink/20 bg-chalk px-3 text-sm dark:border-white/15 dark:bg-surface"/></div><div className="flex justify-end gap-2 pt-3"><button type="button" onClick={()=>setEditing(null)} className="h-11 rounded-[10px] border border-ink/15 px-4 font-semibold dark:border-white/15">Cancel</button><button className="h-11 rounded-[10px] border-[1.5px] border-ink bg-tape px-5 font-semibold text-ink">Save changes</button></div></form></Modal>}

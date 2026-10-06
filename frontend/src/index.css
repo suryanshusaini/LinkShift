@@ -1,10 +1,249 @@
+@import "@fontsource-variable/bricolage-grotesque";
+@import "@fontsource/jetbrains-mono";
 @import "tailwindcss";
 
-/* Fix for transparent/gradient text disappearing on highlight.
-   Without -webkit-text-fill-color, text rendered with bg-clip-text
-   becomes invisible when selected because the fill is transparent. */
+/* Tailwind v4: make dark: follow LinkShift's explicit theme toggle. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-ink: #201A16;
+  --color-plaster: #F3E9DC;
+  --color-chalk: #FFFDF8;
+  --color-tape: #FF5A1F;
+  --color-tape-hover: #E84A12;
+  --color-slate: #62584F;
+  --color-signal: #3157D5;
+  --color-go: #157A3D;
+  --color-stop: #B42318;
+  --color-warn: #FFF0E8;
+
+  --color-night: #15110E;
+  --color-surface: #211A15;
+  --color-surface-raised: #2B221B;
+  --color-text-dark: #FFF9F2;
+  --color-slate-dark: #BEB2A5;
+
+  --font-sans: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+:root {
+  color-scheme: light;
+  --page-bg: #F3E9DC;
+  --page-text: #201A16;
+  --surface: #FFFDF8;
+  --surface-soft: #E9DCCB;
+  --surface-raised: #FFFDF8;
+  --border: #D8C9B7;
+  --border-soft: #E7DCCD;
+  --muted: #62584F;
+  --muted-soft: #81756A;
+  --focus: #3157D5;
+
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow-md: 0 8px 24px rgba(16, 24, 40, 0.07);
+  --shadow-lg: 0 20px 50px rgba(16, 24, 40, 0.13);
+}
+
+html.dark {
+  color-scheme: dark;
+  --page-bg: #15110E;
+  --page-text: #FFF9F2;
+  --surface: #211A15;
+  --surface-soft: #2B221B;
+  --surface-raised: #342920;
+  --border: rgba(255, 255, 255, 0.11);
+  --border-soft: rgba(255, 255, 255, 0.065);
+  --muted: #BEB2A5;
+  --muted-soft: #988B7E;
+  --focus: #7892FF;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.20);
+  --shadow-md: 0 10px 28px rgba(0, 0, 0, 0.24);
+  --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.36);
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+html {
+  background: var(--page-bg);
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--page-bg);
+  color: var(--page-text);
+  font-family: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:not(:disabled),
+a {
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    opacity 160ms ease;
+}
+
+a:hover {
+  text-decoration-thickness: 1.5px;
+}
+
+*:focus {
+  outline: none;
+}
+
+*:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--focus) 72%, transparent);
+  outline-offset: 2px;
+}
+
 ::selection {
-  background-color: #3b82f6;
-  color: white;
-  -webkit-text-fill-color: white;
+  background: #FF5A1F;
+  color: #172033;
+  -webkit-text-fill-color: #201A16;
+}
+
+.autofill-fix:-webkit-autofill,
+.autofill-fix:-webkit-autofill:hover,
+.autofill-fix:-webkit-autofill:focus {
+  -webkit-text-fill-color: #201A16;
+  -webkit-box-shadow: 0 0 0 1000px #FFFDF8 inset;
+  transition: background-color 9999s ease-out;
+}
+
+html.dark .autofill-fix:-webkit-autofill,
+html.dark .autofill-fix:-webkit-autofill:hover,
+html.dark .autofill-fix:-webkit-autofill:focus {
+  -webkit-text-fill-color: #FFF9F2;
+  -webkit-box-shadow: 0 0 0 1000px #211A15 inset;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted-soft);
+}
+
+input,
+select,
+textarea {
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+
+input:hover:not(:disabled),
+select:hover:not(:disabled),
+textarea:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--page-text) 22%, var(--border));
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--focus) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 12%, transparent);
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+.elevation-1 { box-shadow: var(--shadow-sm); }
+.elevation-2 { box-shadow: var(--shadow-md); }
+.elevation-3 { box-shadow: var(--shadow-lg); }
+
+/* The ruler is the one place where a repeated-line treatment is intentional. */
+.ruler-ticks {
+  background-image: repeating-linear-gradient(
+    to right,
+    rgba(32, 26, 22, 0.22) 0,
+    rgba(32, 26, 22, 0.22) 1px,
+    transparent 1px,
+    transparent 8px
+  );
+}
+
+.ruler-fill {
+  background-color: #FF5A1F;
+  background-image: repeating-linear-gradient(
+    to right,
+    rgba(32, 26, 22, 0.42) 0,
+    rgba(32, 26, 22, 0.42) 1px,
+    transparent 1px,
+    transparent 8px
+  );
+}
+
+html.dark .ruler-ticks {
+  background-image: repeating-linear-gradient(
+    to right,
+    rgba(248, 250, 252, 0.24) 0,
+    rgba(248, 250, 252, 0.24) 1px,
+    transparent 1px,
+    transparent 8px
+  );
+}
+
+html.dark .ruler-fill {
+  background-color: #FF5A1F;
+  background-image: repeating-linear-gradient(
+    to right,
+    rgba(32, 26, 22, 0.52) 0,
+    rgba(32, 26, 22, 0.52) 1px,
+    transparent 1px,
+    transparent 8px
+  );
+}
+
+button[title],
+button[aria-label] {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+@media (max-width: 767px) {
+  button:not(:disabled):hover {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  button:not(:disabled):active {
+    transform: none !important;
+  }
 }

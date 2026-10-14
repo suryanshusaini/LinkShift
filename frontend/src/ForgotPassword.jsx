@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { apiFetch } from "./lib/api";
 
-const API = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");

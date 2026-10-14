@@ -3,7 +3,6 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { apiFetch } from "./lib/api";
 
-const API = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
 export default function ResetPassword() {
   const [params] = useSearchParams();

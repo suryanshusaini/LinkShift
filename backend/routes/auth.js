@@ -16,6 +16,7 @@ const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, standardHeade
 const otpLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false, message: { message: "Too many verification attempts. Please try again later." } });
 const resetLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false, message: { message: "Too many password recovery requests. Please try again later." } });
 const normalizeEmail = (value) => String(value || "").trim().toLowerCase();
+const validPassword = (value) => value.length >= 12 && Buffer.byteLength(value, "utf8") <= 72;
 const hashOtp = (email, code) => crypto.createHash("sha256").update(email + ":" + code + ":" + process.env.JWT_SECRET).digest("hex");
 const genericRecovery = { message: "If an account exists for that email, recovery instructions will be sent." };
 
@@ -55,7 +56,7 @@ router.post("/register", authLimiter, async (req, res) => {
     const password = String(req.body.password || "");
     if (!name || name.length > 100) return res.status(400).json({ message: "Enter a name of 1–100 characters." });
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) return res.status(400).json({ message: "Enter a valid email address." });
-    if (password.length < 12 || password.length > 128) return res.status(400).json({ message: "Use a password between 12 and 128 characters." });
+    if (!validPassword(password)) return res.status(400).json({ message: "Use a password of at least 12 characters and no more than 72 UTF-8 bytes." });
 
     const existing = await User.findOne({ email });
     if (existing?.emailVerified) return res.status(409).json({ message: "An account with this email already exists. Please sign in." });
@@ -220,7 +221,7 @@ router.post("/reset-password", resetLimiter, async (req, res) => {
   try {
     const token = String(req.body.token || "");
     const password = String(req.body.password || "");
-    if (!token || password.length < 12 || password.length > 128) return res.status(400).json({ message: "Use a valid reset link and a password between 12 and 128 characters." });
+    if (!token || !validPassword(password)) return res.status(400).json({ message: "Use a valid reset link and a password of at least 12 characters and no more than 72 UTF-8 bytes." });
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
     const user = await User.findOne({ resetTokenHash: tokenHash, resetExpires: { $gt: new Date() } });
     if (!user) return res.status(400).json({ message: "This reset link is invalid or has expired." });
@@ -247,7 +248,7 @@ router.post("/change-password", sessionAuth, async (req, res) => {
   try {
     const currentPassword = String(req.body.currentPassword || "");
     const newPassword = String(req.body.newPassword || "");
-    if (newPassword.length < 12 || newPassword.length > 128) return res.status(400).json({ message: "Use a password between 12 and 128 characters." });
+    if (!validPassword(newPassword)) return res.status(400).json({ message: "Use a password of at least 12 characters and no more than 72 UTF-8 bytes." });
     const user = await User.findById(req.userId);
     if (!user?.password || !(await bcrypt.compare(currentPassword, user.password))) return res.status(400).json({ message: "Current password is incorrect." });
     user.password = await bcrypt.hash(newPassword, 12);

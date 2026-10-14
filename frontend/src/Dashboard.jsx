@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { BarChart3, Copy, Edit3, ExternalLink, Filter, MoreHorizontal, QrCode, Search, Trash2, X } from "lucide-react";
 import toast from "react-hot-toast";
+import { apiFetch } from "./lib/api";
 
 const API = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 const SHORT_BASE = (import.meta.env.VITE_SHORT_BASE_URL || API).replace(/\/$/, "");
@@ -85,6 +86,7 @@ export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted 
   const [qr, setQr] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [passwordBusy, setPasswordBusy] = useState(false);
 
   const fetchLinks = useCallback(async (requestedPage) => {
     if (!token) return;
@@ -140,6 +142,25 @@ export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted 
       const data = await response.json(); if (!response.ok) throw new Error(data.error || "Could not save changes.");
       setItems((current) => current.map((item) => item._id === editing._id ? data : item)); setSavedLinks((current) => current.map((item) => item._id === editing._id ? data : item)); setEditing(null); toast.success("Link updated.");
     } catch (error) { toast.error(error.message); }
+  };
+
+  const changePassword = async (event) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const currentPassword = String(form.get("currentPassword") || "");
+    const newPassword = String(form.get("newPassword") || "");
+    const confirmPassword = String(form.get("confirmPassword") || "");
+    if (newPassword.length < 12) return toast.error("Use at least 12 characters for your new password.");
+    if (newPassword !== confirmPassword) return toast.error("The new passwords do not match.");
+    setPasswordBusy(true);
+    try {
+      const response = await apiFetch("/api/auth/change-password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ currentPassword, newPassword }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Could not change password.");
+      toast.success(data.message || "Password changed. Sign in again.");
+      onAccountDeleted();
+    } catch (error) { toast.error(error.message); }
+    finally { setPasswordBusy(false); }
   };
 
   const deleteAccount = async () => {
@@ -201,7 +222,7 @@ export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted 
 
     <div className="mt-5 flex items-center justify-between"><p className="text-xs text-slate dark:text-slate-dark">Page {page} of {pages}</p><div className="flex gap-2"><button disabled={page<=1} onClick={()=>setPage((value)=>value-1)} className="h-10 rounded-[8px] border border-ink/15 px-4 text-sm font-semibold disabled:opacity-40 dark:border-white/15">Previous</button><button disabled={page>=pages} onClick={()=>setPage((value)=>value+1)} className="h-10 rounded-[8px] border border-ink/15 px-4 text-sm font-semibold disabled:opacity-40 dark:border-white/15">Next</button></div></div>
 
-    <div className="mt-16 pt-2"><p className="font-mono text-xs text-stop">Account</p><div className="mt-4 flex flex-col gap-4 rounded-[12px] border border-stop/15 bg-stop/[0.025] p-5 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-semibold text-ink dark:text-text-dark">Delete your account</h2><p className="mt-1 text-sm text-slate dark:text-slate-dark">Permanently removes your account and all links.</p></div><button disabled={deletingAccount} onClick={deleteAccount} className="h-11 rounded-[10px] border border-stop/40 px-4 font-semibold text-stop disabled:opacity-50">{deletingAccount?"Deleting…":"Delete account"}</button></div></div>
+    <div className="mt-16 pt-2"><p className="font-mono text-xs text-slate dark:text-slate-dark">Account security</p><div className="mt-4 rounded-[12px] border border-ink/10 bg-chalk p-5 dark:border-white/10 dark:bg-surface"><h2 className="font-semibold text-ink dark:text-text-dark">Change password</h2><p className="mt-1 text-sm text-slate dark:text-slate-dark">Changing your password signs out all active sessions.</p><form onSubmit={changePassword} className="mt-4 grid gap-3 sm:grid-cols-2"><input name="currentPassword" type="password" autoComplete="current-password" required placeholder="Current password" className="h-11 rounded-[9px] border border-ink/20 bg-transparent px-3 text-sm dark:border-white/15"/><input name="newPassword" type="password" autoComplete="new-password" minLength={12} maxLength={128} required placeholder="New password (12+ characters)" className="h-11 rounded-[9px] border border-ink/20 bg-transparent px-3 text-sm dark:border-white/15"/><input name="confirmPassword" type="password" autoComplete="new-password" minLength={12} maxLength={128} required placeholder="Confirm new password" className="h-11 rounded-[9px] border border-ink/20 bg-transparent px-3 text-sm dark:border-white/15"/><div className="flex items-center sm:justify-end"><button disabled={passwordBusy} className="h-11 rounded-[9px] border-[1.5px] border-ink bg-tape px-4 text-sm font-semibold text-ink disabled:opacity-50">{passwordBusy ? "Updating…" : "Change password"}</button></div></form></div><div className="mt-4 flex flex-col gap-4 rounded-[12px] border border-stop/15 bg-stop/[0.025] p-5 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-semibold text-ink dark:text-text-dark">Delete your account</h2><p className="mt-1 text-sm text-slate dark:text-slate-dark">Permanently removes your account and all links.</p></div><button disabled={deletingAccount} onClick={deleteAccount} className="h-11 rounded-[10px] border border-stop/40 px-4 font-semibold text-stop disabled:opacity-50">{deletingAccount?"Deleting…":"Delete account"}</button></div></div>
 
     {analytics && <AnalyticsModal link={analytics} onClose={()=>setAnalytics(null)}/>}
     {editing && <Modal title="Edit link" onClose={()=>setEditing(null)}><form onSubmit={saveEdit} className="mt-6 space-y-4"><div><label className="mb-1.5 block text-sm font-semibold">Destination URL</label><input name="originalUrl" type="url" required defaultValue={editing.originalUrl} className="h-12 w-full rounded-[10px] border border-ink/20 bg-chalk px-3 text-sm dark:border-white/15 dark:bg-surface"/></div><div><label className="mb-1.5 block text-sm font-semibold">Custom alias</label><div className="flex h-12 overflow-hidden rounded-[10px] border border-ink/20 dark:border-white/15"><span className="flex items-center border-r border-ink/10 px-3 font-mono text-xs text-slate dark:border-white/10 dark:text-slate-dark">{SHORT_BASE}/</span><input name="customAlias" required defaultValue={editing.shortId} className="min-w-0 flex-1 bg-transparent px-3 text-sm"/></div></div><div><label className="mb-1.5 block text-sm font-semibold">Expiry</label><input name="expiresAt" type="date" defaultValue={dateInput(editing.expiresAt)} className="h-12 w-full rounded-[10px] border border-ink/20 bg-chalk px-3 text-sm dark:border-white/15 dark:bg-surface"/></div><div className="flex justify-end gap-2 pt-3"><button type="button" onClick={()=>setEditing(null)} className="h-11 rounded-[10px] border border-ink/15 px-4 font-semibold dark:border-white/15">Cancel</button><button className="h-11 rounded-[10px] border-[1.5px] border-ink bg-tape px-5 font-semibold text-ink">Save changes</button></div></form></Modal>}

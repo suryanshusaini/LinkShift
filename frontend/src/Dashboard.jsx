@@ -16,6 +16,7 @@ const formatDate = (dateStr) => {
 export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const navigate = useNavigate();
 
   const fetchSavedLinks = async () => {
@@ -64,6 +65,25 @@ export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted 
     }
   };
 
+  const handleChangePassword = async (event) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const currentPassword = String(form.get("currentPassword") || "");
+    const newPassword = String(form.get("newPassword") || "");
+    const confirmPassword = String(form.get("confirmPassword") || "");
+    if (newPassword.length < 12 || new TextEncoder().encode(newPassword).length > 72) return toast.error("Use at least 12 characters and no more than 72 UTF-8 bytes.");
+    if (newPassword !== confirmPassword) return toast.error("The new passwords do not match.");
+    setIsChangingPassword(true);
+    try {
+      const response = await apiFetch("/api/auth/change-password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ currentPassword, newPassword }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Could not change password.");
+      toast.success(data.message || "Password changed. Sign in again.");
+      if (onAccountDeleted) onAccountDeleted();
+      navigate("/login", { replace: true });
+    } catch (error) { toast.error(error.message || "Could not change password."); }
+    finally { setIsChangingPassword(false); }
+  };
   const handleDeleteAccount = async () => {
     const confirmed = window.confirm(
       "Are you absolutely sure? This will permanently delete your account and all your shortened links. This action cannot be undone.",
@@ -261,6 +281,17 @@ export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted 
           </div>
         </div>
       )}
+
+      <section className="mt-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-900">Account security</h2>
+        <p className="mt-1 text-sm text-slate-500">Changing your password signs out all active sessions.</p>
+        <form onSubmit={handleChangePassword} className="mt-4 grid gap-3 sm:grid-cols-2">
+          <input name="currentPassword" type="password" autoComplete="current-password" required placeholder="Current password" className="rounded-lg border border-slate-200 px-4 py-3 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" />
+          <input name="newPassword" type="password" autoComplete="new-password" minLength={12} maxLength={72} required placeholder="New password (12+ characters)" className="rounded-lg border border-slate-200 px-4 py-3 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" />
+          <input name="confirmPassword" type="password" autoComplete="new-password" minLength={12} maxLength={72} required placeholder="Confirm new password" className="rounded-lg border border-slate-200 px-4 py-3 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" />
+          <div className="flex items-center sm:justify-end"><button disabled={isChangingPassword} className="rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60">{isChangingPassword ? "Updating…" : "Change password"}</button></div>
+        </form>
+      </section>
     </div>
   );
 }

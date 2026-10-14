@@ -2,9 +2,14 @@ name: LinkShift CI
 
 on:
   push:
-    branches: [main, feature/linkshift-v2]
+    branches: [main]
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: linkshift-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   frontend:

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { apiFetch } from "./lib/api";
 
 // Format a date string as "Aug 6, 2026" using the native Intl API
 const formatDate = (dateStr) => {
@@ -19,14 +20,7 @@ export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted 
 
   const fetchSavedLinks = async () => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/urls`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await apiFetch("/api/urls");
 
       if (response.ok) {
         const data = await response.json();
@@ -56,16 +50,7 @@ export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted 
 
   const handleDelete = async (id) => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
+      const response = await apiFetch("/api/" + id, { method: "DELETE" });
 
       if (response.ok) {
         // Optimistic update — remove immediately without waiting for re-fetch
@@ -87,21 +72,10 @@ export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted 
 
     setIsDeletingAccount(true);
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/auth/account`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      const response = await apiFetch("/api/auth/account", { method: "DELETE" });
 
       if (response.ok) {
         toast.success("Account deleted. Sorry to see you go!");
-        // Clear all session data from localStorage
-        localStorage.removeItem("token");
-        localStorage.removeItem("email");
-        localStorage.removeItem("name");
         // Notify App.jsx to reset user + savedLinks state
         if (onAccountDeleted) onAccountDeleted();
         navigate("/");
@@ -142,7 +116,7 @@ export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted 
       </div>
 
       {/* ── Retention Policy Notice ──────────────────────────────────── */}
-      <div className="flex items-start gap-3 bg-amber-50 border border-amber-100 text-amber-700 text-sm px-4 py-3 rounded-xl mb-8 leading-relaxed">
+      <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 text-blue-700 text-sm px-4 py-3 rounded-xl mb-8 leading-relaxed">
         <span className="text-base shrink-0 mt-0.5">💡</span>
         <p>
           <span className="font-semibold">Data Retention Policy:</span> Links

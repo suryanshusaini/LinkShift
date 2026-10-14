@@ -10,6 +10,7 @@ import NotFound from "./NotFound";
 import ForgotPassword from "./ForgotPassword";
 import ResetPassword from "./ResetPassword";
 import Legal from "./Legal";
+import { apiFetch, setCsrfToken } from "./lib/api";
 
 function ThemeToggle({ isDark, onToggle, mobile = false }) {
   return (
@@ -193,17 +194,23 @@ function Shell({ user, handleLogout, children }) {
 }
 
 function App() {
-  const [user, setUser] = useState(() => {
-    const token = localStorage.getItem("token");
-    const email = localStorage.getItem("email");
-    return token && email ? { email, name: localStorage.getItem("name") || "" } : null;
-  });
+  const [user, setUser] = useState(null);
   const [savedLinks, setSavedLinks] = useState([]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("email");
-    localStorage.removeItem("name");
+  useEffect(() => {
+    let active = true;
+    apiFetch("/api/auth/csrf").then((response) => response.json()).then((data) => setCsrfToken(data.csrfToken)).catch(() => {});
+    apiFetch("/api/auth/me").then(async (response) => {
+      if (!response.ok) return null;
+      return response.json();
+    }).then((data) => {
+      if (active && data) setUser(data);
+    }).catch(() => {});
+    return () => { active = false; };
+  }, []);
+
+  const handleLogout = async () => {
+    try { await apiFetch("/api/auth/logout", { method: "POST" }); } catch {}
     setUser(null);
     setSavedLinks([]);
   };

@@ -91,7 +91,7 @@ export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted 
     setLoading(true);
     try {
       const params = new URLSearchParams({ page: String(requestedPage), limit: "10", q: query, status, sort });
-      const response = await fetch(API + "/api/urls?" + params.toString(), { headers: { } });
+      const response = await apiFetch("/api/urls?" + params.toString(), { headers: { } });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Could not load links.");
       setItems(data.items || []); setTotal(data.total || 0); setPages(Math.max(data.pages || 1, 1)); setSavedLinks(data.items || []);

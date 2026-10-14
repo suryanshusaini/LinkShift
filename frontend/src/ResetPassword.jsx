@@ -1,15 +1,18 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { apiFetch } from "./lib/api";
 
 export default function ResetPassword() {
-  const [token] = useState(() => {
+  const [token, setToken] = useState("");
+  const tokenRead = useRef(false);
+  useEffect(() => {
+    if (tokenRead.current) return;
+    tokenRead.current = true;
     const params = new URLSearchParams(window.location.search);
-    const value = params.get("token") || "";
+    setToken(params.get("token") || "");
     window.history.replaceState({}, document.title, window.location.pathname);
-    return value;
-  });
+  }, []);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);

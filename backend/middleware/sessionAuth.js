@@ -67,7 +67,7 @@ const sessionAuth = async (req, res, next) => {
         return res.status(403).json({ message: "Security token missing or invalid. Refresh and try again." });
       }
       const origin = req.get("origin");
-      if (origin && origin !== process.env.FRONTEND_URL) return res.status(403).json({ message: "Origin is not allowed." });
+      if (origin && !String(process.env.FRONTEND_URL || "").split(",").map((value) => value.trim()).includes(origin) && !(process.env.NODE_ENV !== "production" && ["http://localhost:5173", "http://127.0.0.1:5173"].includes(origin))) return res.status(403).json({ message: "Origin is not allowed." });
     }
     session.lastSeenAt = new Date();
     await session.save();

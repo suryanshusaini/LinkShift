@@ -206,7 +206,7 @@ router.post("/forgot-password", resetLimiter, async (req, res) => {
         if (!delivered && process.env.NODE_ENV !== "production") return res.json({ ...genericRecovery, devResetToken: rawToken });
       } catch (error) {
         console.error("Password reset email delivery failed:", error.message);
-        return res.status(503).json({ message: "Recovery email could not be sent. Please try again shortly." });
+        return res.json(genericRecovery);
       }
     }
     return res.json(genericRecovery);

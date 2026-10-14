@@ -8,7 +8,7 @@ const { validateAlias } = require("../validators/alias");
 
 const router = express.Router();
 const guestLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, standardHeaders: true, legacyHeaders: false, message: { error: "Guest limit reached. Please log in to create more links." }, skip: (req) => Boolean(req.userId) });
-const accountLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false, message: { error: "Account limit reached. Please try again later." }, keyGenerator: (req) => String(req.userId), skip: (req) => !req.userId });
+const accountLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false, message: { error: "Account limit reached. Please try again later." }, skip: (req) => !req.userId });
 
 const createShortId = async () => {
   for (let attempt = 0; attempt < 5; attempt += 1) {

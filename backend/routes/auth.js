@@ -8,7 +8,7 @@ const User = require("../models/User");
 const Url = require("../models/Url");
 const ClickEvent = require("../models/ClickEvent");
 const Session = require("../models/Session");
-const { createSession, clearSessionCookies, csrfEndpoint, sessionAuth, hash } = require("../middleware/sessionAuth");
+const { createSession, clearSessionCookies, csrfEndpoint, sessionAuth, optionalSession, parseCookies, SESSION_COOKIE, hash: hashSession } = require("../middleware/sessionAuth");
 
 const router = express.Router();
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -60,7 +60,6 @@ router.post("/register", authLimiter, async (req, res) => {
     const existing = await User.findOne({ email });
     if (existing?.emailVerified) return res.status(409).json({ message: "An account with this email already exists. Please sign in." });
     const code = String(crypto.randomInt(0, 1000000)).padStart(6, "0");
-    const now = new Date();
     let user = existing;
     if (!user) user = new User({ name, email, password: await bcrypt.hash(password, 12), emailVerified: false });
     else {
@@ -263,11 +262,10 @@ router.post("/change-password", sessionAuth, async (req, res) => {
   }
 });
 
-router.post("/logout", async (req, res) => {
+router.post("/logout", optionalSession, async (req, res) => {
   try {
-    const { parseCookies, SESSION_COOKIE, hash: hashValue } = require("../middleware/sessionAuth");
     const cookies = parseCookies(req.headers.cookie);
-    if (cookies[SESSION_COOKIE]) await Session.updateOne({ tokenHash: hashValue(cookies[SESSION_COOKIE]), revokedAt: null }, { $set: { revokedAt: new Date() } });
+    if (cookies[SESSION_COOKIE]) await Session.updateOne({ tokenHash: hashSession(cookies[SESSION_COOKIE]), revokedAt: null }, { $set: { revokedAt: new Date() } });
     clearSessionCookies(res);
     return res.json({ message: "Logged out successfully." });
   } catch (error) {

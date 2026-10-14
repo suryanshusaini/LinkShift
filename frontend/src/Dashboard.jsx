@@ -25,7 +25,7 @@ function AnalyticsModal({ link, onClose }) {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetch(API + "/api/urls/" + link._id + "/analytics?days=" + days, { headers: { Authorization: "Bearer " + localStorage.getItem("token") } })
+    apiFetch("/api/urls/" + link._id + "/analytics?days=" + days, { headers: { } })
       .then(async (response) => { const body = await response.json(); if (!response.ok) throw new Error(body.error || "Could not load analytics."); return body; })
       .then((body) => { if (!cancelled) setData(body); })
       .catch((error) => { if (!cancelled) toast.error(error.message); })
@@ -87,12 +87,11 @@ export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted 
   const [deletingAccount, setDeletingAccount] = useState(false);
 
   const fetchLinks = useCallback(async (requestedPage) => {
-    const token = localStorage.getItem("token");
     if (!token) return;
     setLoading(true);
     try {
       const params = new URLSearchParams({ page: String(requestedPage), limit: "10", q: query, status, sort });
-      const response = await fetch(API + "/api/urls?" + params.toString(), { headers: { Authorization: "Bearer " + token } });
+      const response = await fetch(API + "/api/urls?" + params.toString(), { headers: { } });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Could not load links.");
       setItems(data.items || []); setTotal(data.total || 0); setPages(Math.max(data.pages || 1, 1)); setSavedLinks(data.items || []);
@@ -114,7 +113,7 @@ export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted 
 
   const toggle = async (link) => {
     try {
-      const response = await fetch(API + "/api/urls/" + link._id, { method: "PATCH", headers: { "Content-Type": "application/json", Authorization: "Bearer " + localStorage.getItem("token") }, body: JSON.stringify({ isActive: !link.isActive }) });
+      const response = await apiFetch("/api/urls/" + link._id, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isActive: !link.isActive }) });
       const data = await response.json(); if (!response.ok) throw new Error(data.error || "Could not update link.");
       setItems((current) => current.map((item) => item._id === link._id ? data : item)); setSavedLinks((current) => current.map((item) => item._id === link._id ? data : item));
       toast.success(data.isActive ? "Link enabled." : "Link disabled.");
@@ -125,10 +124,10 @@ export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted 
     const link = deleteTarget; if (!link) return;
     setDeleteTarget(null);
     try {
-      const response = await fetch(API + "/api/urls/" + link._id, { method: "DELETE", headers: { Authorization: "Bearer " + localStorage.getItem("token") } });
+      const response = await apiFetch("/api/urls/" + link._id, { method: "DELETE", headers: { } });
       const data = await response.json(); if (!response.ok) throw new Error(data.error || "Could not delete link.");
       setItems((current) => current.filter((item) => item._id !== link._id)); setTotal((value) => Math.max(0, value - 1));
-      toast((t) => <span className="flex items-center gap-3"><span>Link moved to trash.</span><button onClick={async () => { toast.dismiss(t.id); try { const r = await fetch(API + "/api/urls/" + link._id + "/restore", { method: "POST", headers: { Authorization: "Bearer " + localStorage.getItem("token") } }); const restored = await r.json(); if (!r.ok) throw new Error(restored.error); setItems((current) => [restored, ...current]); setTotal((value) => value + 1); toast.success("Link restored."); } catch (error) { toast.error(error.message); } }} className="font-semibold text-signal">Undo</button></span>, { duration: 7000 });
+      toast((t) => <span className="flex items-center gap-3"><span>Link moved to trash.</span><button onClick={async () => { toast.dismiss(t.id); try { const r = await apiFetch("/api/urls/" + link._id + "/restore", { method: "POST", headers: { } }); const restored = await r.json(); if (!r.ok) throw new Error(restored.error); setItems((current) => [restored, ...current]); setTotal((value) => value + 1); toast.success("Link restored."); } catch (error) { toast.error(error.message); } }} className="font-semibold text-signal">Undo</button></span>, { duration: 7000 });
     } catch (error) { toast.error(error.message); }
   };
 
@@ -137,7 +136,7 @@ export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted 
     const form = new FormData(event.currentTarget);
     const body = { originalUrl: form.get("originalUrl"), customAlias: form.get("customAlias"), expiresAt: form.get("expiresAt") || null };
     try {
-      const response = await fetch(API + "/api/urls/" + editing._id, { method: "PATCH", headers: { "Content-Type": "application/json", Authorization: "Bearer " + localStorage.getItem("token") }, body: JSON.stringify(body) });
+      const response = await apiFetch("/api/urls/" + editing._id, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = await response.json(); if (!response.ok) throw new Error(data.error || "Could not save changes.");
       setItems((current) => current.map((item) => item._id === editing._id ? data : item)); setSavedLinks((current) => current.map((item) => item._id === editing._id ? data : item)); setEditing(null); toast.success("Link updated.");
     } catch (error) { toast.error(error.message); }
@@ -147,7 +146,7 @@ export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted 
     if (!window.confirm("Delete your account and every LinkShift link permanently? This cannot be undone.")) return;
     setDeletingAccount(true);
     try {
-      const response = await fetch(API + "/api/auth/account", { method: "DELETE", headers: { Authorization: "Bearer " + localStorage.getItem("token") } });
+      const response = await apiFetch("/api/auth/account", { method: "DELETE", headers: { } });
       const data = await response.json(); if (!response.ok) throw new Error(data.message || "Could not delete account.");
       onAccountDeleted(); toast.success("Account deleted.");
     } catch (error) { toast.error(error.message); }

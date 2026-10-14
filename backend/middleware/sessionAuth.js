@@ -88,6 +88,16 @@ const optionalSession = async (req, res, next) => {
       if (session) {
         req.userId = String(session.userId);
         req.sessionId = session._id;
+        if (!["GET", "HEAD", "OPTIONS"].includes(req.method)) {
+          const csrfCookie = cookies[CSRF_COOKIE];
+          const csrfHeader = req.get("x-csrf-token");
+          if (!csrfCookie || !csrfHeader || csrfCookie.length !== csrfHeader.length ||
+              !crypto.timingSafeEqual(Buffer.from(csrfCookie), Buffer.from(csrfHeader))) {
+            return res.status(403).json({ message: "Security token missing or invalid. Refresh and try again." });
+          }
+          const origin = req.get("origin");
+          if (origin && origin !== process.env.FRONTEND_URL) return res.status(403).json({ message: "Origin is not allowed." });
+        }
       }
     }
     return next();

@@ -9,7 +9,7 @@ const validateEnv = () => {
   }
 
   let frontend;
-  try { frontend = new URL(process.env.FRONTEND_URL); } catch { throw new Error("FRONTEND_URL must be a valid absolute URL."); }
+  try { frontend = new URL(String(process.env.FRONTEND_URL).split(",")[0].trim()); } catch { throw new Error("FRONTEND_URL must start with a valid absolute URL."); }
   if (process.env.NODE_ENV === "production" && frontend.protocol !== "https:") {
     throw new Error("FRONTEND_URL must use HTTPS in production.");
   }

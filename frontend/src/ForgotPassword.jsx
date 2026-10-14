@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import { apiFetch } from "./lib/api";
 
 const API = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
@@ -13,7 +14,7 @@ export default function ForgotPassword() {
   const submit = async (event) => {
     event.preventDefault(); setLoading(true);
     try {
-      const response = await fetch(API + "/api/auth/forgot-password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) });
+      const response = await apiFetch("/api/auth/forgot-password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) });
       const data = await response.json(); if (!response.ok) throw new Error(data.message || "Could not process request.");
       setSent(true); if (data.devResetToken) setDevToken(data.devResetToken); toast.success("Check your inbox for reset instructions.");
     } catch (error) { toast.error(error.message); }

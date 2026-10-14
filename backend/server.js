@@ -12,11 +12,11 @@ const app = express();
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
 
-const allowedOrigins = new Set([
-  ...String(process.env.FRONTEND_URL || "").split(",").map((origin) => origin.trim()).filter(Boolean),
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
-]);
+const allowedOrigins = new Set(String(process.env.FRONTEND_URL || "").split(",").map((origin) => origin.trim()).filter(Boolean));
+if (process.env.NODE_ENV !== "production") {
+  allowedOrigins.add("http://localhost:5173");
+  allowedOrigins.add("http://127.0.0.1:5173");
+}
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" }, referrerPolicy: { policy: "no-referrer" } }));
 app.use(cors({
   origin(origin, callback) {

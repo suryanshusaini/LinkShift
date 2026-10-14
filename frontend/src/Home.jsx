@@ -1,5 +1,6 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { apiFetch } from "./lib/api";
 
 export default function Home({ user, onLinkCreated }) {
   const [longUrl, setLongUrl] = useState("");
@@ -14,21 +15,11 @@ export default function Home({ user, onLinkCreated }) {
     setIsSubmitting(true);
 
     try {
-      const token = localStorage.getItem("token");
-      const headers = { "Content-Type": "application/json" };
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/shorten`,
-        {
-          method: "POST",
-          headers: headers,
-          body: JSON.stringify({
-            originalUrl: longUrl,
-            customAlias: customAlias.trim(),
-          }),
-        },
-      );
+      const response = await apiFetch("/api/shorten", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ originalUrl: longUrl, customAlias: customAlias.trim() }),
+      });
 
       const data = await response.json();
 

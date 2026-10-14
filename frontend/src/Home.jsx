@@ -43,12 +43,9 @@ export default function Home({ user, onLinkCreated }) {
     if (!longUrl.trim()) return;
     setSubmitting(true);
     try {
-      const token = localStorage.getItem("token");
-      const headers = { "Content-Type": "application/json" };
-      if (token) headers.Authorization = "Bearer " + token;
       const response = await apiFetch("/api/shorten", {
         method: "POST",
-        headers,
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ originalUrl: longUrl.trim(), customAlias: alias.trim() || undefined, expiresAt: expiresAt || undefined }),
       });
       const data = await response.json();

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
+import { apiFetch } from "./lib/api";
 
 const API = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
@@ -19,7 +20,7 @@ export default function ResetPassword() {
     if (password !== confirm) return toast.error("Passwords do not match.");
     setLoading(true);
     try {
-      const response = await fetch(API + "/api/auth/reset-password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, password }) });
+      const response = await apiFetch("/api/auth/reset-password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, password }) });
       const data = await response.json(); if (!response.ok) throw new Error(data.message || "Could not reset password.");
       setDone(true); toast.success("Password updated."); setTimeout(() => navigate("/login", { replace: true }), 1200);
     } catch (error) { toast.error(error.message); }

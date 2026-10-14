@@ -26,7 +26,7 @@ export default function Home({ user, onLinkCreated }) {
       if (!/^[A-Za-z0-9_-]{3,30}$/.test(value)) { setAliasState({ status: "taken", message: "Use 3–30 letters, numbers, hyphens or underscores." }); return; }
       setAliasState({ status: "checking", message: "Checking…" });
       try {
-        const response = await fetch(API + "/api/alias/check?alias=" + encodeURIComponent(value));
+        const response = await apiFetch("/api/alias/check?alias=" + encodeURIComponent(value));
         const data = await response.json();
         setAliasState(data.available ? { status: "available", message: "Available" } : { status: "taken", message: data.error || "Taken, try another" });
       } catch { setAliasState({ status: "idle", message: "" }); }
@@ -46,7 +46,7 @@ export default function Home({ user, onLinkCreated }) {
       const token = localStorage.getItem("token");
       const headers = { "Content-Type": "application/json" };
       if (token) headers.Authorization = "Bearer " + token;
-      const response = await fetch(API + "/api/shorten", {
+      const response = await apiFetch("/api/shorten", {
         method: "POST",
         headers,
         body: JSON.stringify({ originalUrl: longUrl.trim(), customAlias: alias.trim() || undefined, expiresAt: expiresAt || undefined }),

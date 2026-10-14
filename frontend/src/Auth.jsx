@@ -5,7 +5,6 @@ import { GoogleLogin } from "@react-oauth/google";
 import toast from "react-hot-toast";
 import { apiFetch, setCsrfToken } from "./lib/api";
 
-const API = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
 export default function Auth({ mode, setUser }) {
   const isSignup = mode === "signup";

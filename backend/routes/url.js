@@ -1,6 +1,6 @@
 const express = require("express");
 const rateLimit = require("express-rate-limit");
-const jwt = require("jsonwebtoken");
+const { optionalSession, sessionAuth } = require("../middleware/sessionAuth");
 const mongoose = require("mongoose");
 const { customAlphabet } = require("nanoid");
 const Url = require("../models/Url");
@@ -11,18 +11,6 @@ const { del: invalidateRedirect } = require("../config/redis");
 
 const router = express.Router();
 const generateShortId = customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", 7);
-
-const optionalAuth = (req, res, next) => {
-  req.userId = null;
-  const header = req.headers.authorization;
-  if (header?.startsWith("Bearer ")) {
-    try {
-      const decoded = jwt.verify(header.slice(7), process.env.JWT_SECRET);
-      req.userId = decoded.userId || decoded.id || null;
-    } catch {}
-  }
-  next();
-};
 
 const guestLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { error: "Guest limit reached. Please log in to create more links." }, standardHeaders: true, legacyHeaders: false, skip: (req) => req.userId !== null });
 const accountLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, message: { error: "Account limit reached. Please try again later." }, standardHeaders: true, legacyHeaders: false, skip: (req) => req.userId === null });
@@ -35,9 +23,9 @@ const createShortId = async () => {
   throw new Error("Unable to allocate a unique short ID.");
 };
 
-const requireAuth = (req, res, next) => optionalAuth(req, res, () => req.userId ? next() : res.status(401).json({ error: "Unauthorized" }));
+const requireAuth = sessionAuth;
 
-router.post("/shorten", optionalAuth, guestLimiter, accountLimiter, async (req, res) => {
+router.post("/shorten", optionalSession, guestLimiter, accountLimiter, async (req, res) => {
   try {
     const urlResult = await validateUrl(req.body.originalUrl);
     if (!urlResult.valid) return res.status(400).json({ error: urlResult.message });
@@ -62,7 +50,7 @@ router.post("/shorten", optionalAuth, guestLimiter, accountLimiter, async (req, 
   }
 });
 
-router.get("/alias/check", optionalAuth, async (req, res) => {
+router.get("/alias/check", optionalSession, async (req, res) => {
   const result = validateAlias(req.query.alias);
   if (!result.valid) return res.status(400).json({ available: false, error: result.message });
   if (!result.value) return res.json({ available: false, error: "Enter an alias." });

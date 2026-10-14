@@ -36,9 +36,12 @@ jobs:
           cache: npm
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
+      - run: npm test
       - run: node --check server.js
       - run: node --check routes/url.js
       - run: node --check routes/auth.js
+      - run: node --check middleware/sessionAuth.js
+      - run: node --check models/Session.js
       - run: node --check routes/redirect.js
       - run: node --check config/redis.js
       - run: node --check models/ClickEvent.js

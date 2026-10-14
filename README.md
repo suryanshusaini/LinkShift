@@ -6,9 +6,9 @@ LinkShift is a practical, production-oriented URL shortener built as a MERN mono
 
 - Frontend: React 19, Vite, Tailwind CSS v4, React Router, Lucide
 - Backend: Node.js, Express 5, MongoDB/Mongoose
-- Auth: JWT, bcrypt, Google Identity Services
+- Auth: opaque HTTP-only cookie sessions, server-side revocation, CSRF protection, bcrypt, Google Identity Services
 - Caching: Redis with graceful MongoDB fallback
-- Email: Nodemailer SMTP for password recovery
+- Email: Nodemailer SMTP for signup OTP verification and single-use password recovery
 - Analytics: MongoDB click events with aggregate device, browser, OS and referrer reporting
 
 ## Features
@@ -24,7 +24,10 @@ LinkShift is a practical, production-oriented URL shortener built as a MERN mono
 - Privacy-conscious click analytics without storing visitor IP addresses
 - Analytics timeline, referrer, device, browser and OS breakdowns
 - QR-code generation
-- Email password recovery with hashed, expiring reset tokens
+- Email OTP verification with expiry, attempt limits and resend throttling
+- Single-use password reset links with hashed, expiring tokens and session revocation
+- HTTP-only secure session cookies, CSRF protection and server-side logout/session revocation
+- Change-password flow that revokes active sessions
 - Google sign-in when configured
 - Light/dark theme and responsive mobile UI
 - Helmet security headers, CORS allow-list and API rate limiting
@@ -102,11 +105,16 @@ Open the Vite URL shown in the terminal, normally http://localhost:5173.
 ### Auth
 
 - POST /api/auth/register
+- GET /api/auth/csrf
+- POST /api/auth/register
+- POST /api/auth/verify-email
+- POST /api/auth/resend-verification
 - POST /api/auth/login
 - POST /api/auth/google
 - GET /api/auth/me
 - POST /api/auth/forgot-password
 - POST /api/auth/reset-password
+- POST /api/auth/change-password
 - POST /api/auth/logout
 - DELETE /api/auth/account
 
@@ -121,14 +129,16 @@ Open the Vite URL shown in the terminal, normally http://localhost:5173.
 
 ## Production notes
 
-1. Set a strong random JWT_SECRET.
+1. Set a cryptographically random JWT_SECRET of at least 32 characters; it is also used to pepper OTP hashes.
 2. Set FRONTEND_URL to the exact production frontend origin.
-3. Configure SMTP before enabling production password recovery.
+3. Configure SMTP before production startup; email is required for signup verification and password recovery.
 4. Configure Google OAuth with the production client ID if Google sign-in is enabled.
 5. Use a managed MongoDB and Redis instance in production.
 6. Set VITE_SHORT_BASE_URL to the public short-link origin.
-7. Put the backend behind HTTPS and a reverse proxy/load balancer.
-8. Keep Redis optional at the application layer; a Redis outage should not make existing links unavailable.
+7. Put the backend behind HTTPS and a reverse proxy/load balancer. Production cookies require Secure and SameSite=None when the frontend and API are cross-site.
+8. Prefer a custom frontend/API domain arrangement that avoids third-party-cookie blocking; verify cookie persistence in the target browsers.
+9. Configure the frontend and API origins exactly; do not use wildcard CORS with credentials.
+10. Keep Redis optional at the application layer; a Redis outage should not make existing links unavailable.
 
 ## Verification
 

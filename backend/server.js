@@ -1,49 +1,43 @@
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
 require("dotenv").config();
-
+const validateEnv = require("./config/env");
 const connectDB = require("./config/db");
 
+validateEnv();
 const app = express();
-
-// Trust Render's (and other reverse proxies') X-Forwarded-For header.
-// Required for express-rate-limit to correctly identify client IPs in production.
+app.disable("x-powered-by");
 app.set("trust proxy", 1);
 
-// ─── Database Connection ─────────────────────────────────────────────────────
-connectDB();
+const allowedOrigins = new Set(String(process.env.FRONTEND_URL || "").split(",").map((origin) => origin.trim()).filter(Boolean));
+if (process.env.NODE_ENV !== "production") {
+  allowedOrigins.add("http://localhost:5173");
+  allowedOrigins.add("http://127.0.0.1:5173");
+}
+app.use(helmet({ referrerPolicy: { policy: "no-referrer" } }));
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.has(origin)) return callback(null, true);
+    return callback(new Error("Origin is not allowed by CORS."));
+  },
+  credentials: true,
+  methods: ["GET", "HEAD", "POST", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "X-CSRF-Token"],
+  maxAge: 600,
+}));
+app.use(express.json({ limit: "32kb" }));
 
-// ─── Middleware ──────────────────────────────────────────────────────────────
-// CORS must come before routes so preflight OPTIONS requests are handled first.
-app.use(cors());
-
-// Parse incoming JSON bodies for POST/PUT/PATCH requests.
-app.use(express.json());
-
-// ─── API Routes ───────────────────────────────────────────────────────────────
-// ORDER MATTERS: specific prefixes must be registered before the wildcard redirect.
-
-// Auth: POST /api/auth/login, POST /api/auth/register
 app.use("/api/auth", require("./routes/auth"));
-
-// URL management: POST /api/shorten, GET /api/urls, DELETE /api/:id
 app.use("/api", require("./routes/url"));
-
-// ─── Health Check ────────────────────────────────────────────────────────────
-// Registered before the redirect wildcard so it is never swallowed by /:shortId.
-app.get("/health", (req, res) => {
-  res.json({ status: "ok", message: "LinkShift API is running." });
-});
-
-// ─── Redirect Route ──────────────────────────────────────────────────────────
-// Must be LAST. The redirect router contains an internal guard that skips
-// any path starting with /api or /health, so it will never shadow API routes
-// even if Express reaches this handler due to a future route ordering change.
+app.get("/health", (req, res) => res.json({ status: "ok", message: "LinkShift API is running." }));
 app.use("/", require("./routes/redirect"));
-
-// ─── Start ───────────────────────────────────────────────────────────────────
-// process.env.PORT is set automatically by Render in production.
-const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  if (err.message === "Origin is not allowed by CORS.") return res.status(403).json({ error: "Origin is not allowed." });
+  console.error("Unhandled request error:", err.message);
+  return res.status(500).json({ error: "Internal server error." });
 });
+
+const PORT = process.env.PORT || 8000;
+connectDB().then(() => app.listen(PORT, () => console.log("LinkShift API listening on port " + PORT)));

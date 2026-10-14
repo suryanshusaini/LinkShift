@@ -1,29 +1,30 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Link, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import Auth from "./Auth";
 import Dashboard from "./Dashboard";
 import Home from "./Home";
+import ForgotPassword from "./ForgotPassword";
+import ResetPassword from "./ResetPassword";
+import { apiFetch, setCsrfToken } from "./lib/api";
 
 function App() {
-  const [user, setUser] = useState(() => {
-    const token = localStorage.getItem("token");
-    const email = localStorage.getItem("email");
-    const name = localStorage.getItem("name");
-    if (token && email) {
-      return { email, name: name || "" };
-    }
-    return null;
-  });
-
-  // Lifted so logout can atomically clear it — prevents session-flash on re-login
+  const [user, setUser] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
   const [savedLinks, setSavedLinks] = useState([]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("email");
-    localStorage.removeItem("name");
+  useEffect(() => {
+    let active = true;
+    apiFetch("/api/auth/csrf").then((response) => response.json()).then((data) => setCsrfToken(data.csrfToken)).catch(() => {});
+    apiFetch("/api/auth/me").then(async (response) => response.ok ? response.json() : null).then((data) => {
+      if (active && data) setUser(data);
+    }).catch(() => {}).finally(() => { if (active) setAuthReady(true); });
+    return () => { active = false; };
+  }, []);
+
+  const handleLogout = async () => {
+    try { await apiFetch("/api/auth/logout", { method: "POST" }); } catch {}
     setUser(null);
     setSavedLinks([]);
   };
@@ -57,7 +58,7 @@ function App() {
                   className="flex items-center gap-2 text-2xl font-extrabold tracking-tight text-slate-900 transition-all duration-300 ease-in-out hover:scale-[1.02]"
                 >
                   {/* Clean chain/link SVG icon — Heroicons "link" outline */}
-                  <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center">
+                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                     <svg
                       className="w-5 h-5 text-white"
                       fill="none"
@@ -111,7 +112,7 @@ function App() {
                       </Link>
                       <Link
                         to="/signup"
-                        className="px-5 py-2.5 text-sm font-semibold bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-all duration-300 ease-in-out shadow-md hover:shadow-lg"
+                        className="px-5 py-2.5 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-300 ease-in-out shadow-sm"
                       >
                         Sign up
                       </Link>
@@ -143,17 +144,17 @@ function App() {
                   path="/signup"
                   element={<Auth mode="signup" setUser={setUser} />}
                 />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route
                   path="/dashboard"
                   element={
-                    user ? (
-                      <Dashboard
-                        savedLinks={savedLinks}
-                        setSavedLinks={setSavedLinks}
-                        onAccountDeleted={handleLogout}
-                      />
+                    !authReady ? (
+                      <div className="py-20 text-center text-slate-500">Checking your session…</div>
+                    ) : user ? (
+                      <Dashboard savedLinks={savedLinks} setSavedLinks={setSavedLinks} onAccountDeleted={handleLogout} />
                     ) : (
-                      <Navigate to="/login" />
+                      <Navigate to="/login" replace />
                     )
                   }
                 />

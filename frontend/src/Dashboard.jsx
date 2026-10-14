@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { apiFetch } from "./lib/api";
 
 // Format a date string as "Aug 6, 2026" using the native Intl API
 const formatDate = (dateStr) => {
@@ -15,18 +16,12 @@ const formatDate = (dateStr) => {
 export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const navigate = useNavigate();
 
   const fetchSavedLinks = async () => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/urls`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await apiFetch("/api/urls");
 
       if (response.ok) {
         const data = await response.json();
@@ -56,16 +51,7 @@ export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted 
 
   const handleDelete = async (id) => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
+      const response = await apiFetch("/api/" + id, { method: "DELETE" });
 
       if (response.ok) {
         // Optimistic update — remove immediately without waiting for re-fetch
@@ -79,6 +65,25 @@ export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted 
     }
   };
 
+  const handleChangePassword = async (event) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const currentPassword = String(form.get("currentPassword") || "");
+    const newPassword = String(form.get("newPassword") || "");
+    const confirmPassword = String(form.get("confirmPassword") || "");
+    if (newPassword.length < 12 || new TextEncoder().encode(newPassword).length > 72) return toast.error("Use at least 12 characters and no more than 72 UTF-8 bytes.");
+    if (newPassword !== confirmPassword) return toast.error("The new passwords do not match.");
+    setIsChangingPassword(true);
+    try {
+      const response = await apiFetch("/api/auth/change-password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ currentPassword, newPassword }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Could not change password.");
+      toast.success(data.message || "Password changed. Sign in again.");
+      if (onAccountDeleted) onAccountDeleted();
+      navigate("/login", { replace: true });
+    } catch (error) { toast.error(error.message || "Could not change password."); }
+    finally { setIsChangingPassword(false); }
+  };
   const handleDeleteAccount = async () => {
     const confirmed = window.confirm(
       "Are you absolutely sure? This will permanently delete your account and all your shortened links. This action cannot be undone.",
@@ -87,21 +92,10 @@ export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted 
 
     setIsDeletingAccount(true);
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/auth/account`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      const response = await apiFetch("/api/auth/account", { method: "DELETE" });
 
       if (response.ok) {
         toast.success("Account deleted. Sorry to see you go!");
-        // Clear all session data from localStorage
-        localStorage.removeItem("token");
-        localStorage.removeItem("email");
-        localStorage.removeItem("name");
         // Notify App.jsx to reset user + savedLinks state
         if (onAccountDeleted) onAccountDeleted();
         navigate("/");
@@ -142,7 +136,7 @@ export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted 
       </div>
 
       {/* ── Retention Policy Notice ──────────────────────────────────── */}
-      <div className="flex items-start gap-3 bg-amber-50 border border-amber-100 text-amber-700 text-sm px-4 py-3 rounded-xl mb-8 leading-relaxed">
+      <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 text-blue-700 text-sm px-4 py-3 rounded-xl mb-8 leading-relaxed">
         <span className="text-base shrink-0 mt-0.5">💡</span>
         <p>
           <span className="font-semibold">Data Retention Policy:</span> Links
@@ -287,6 +281,17 @@ export default function Dashboard({ savedLinks, setSavedLinks, onAccountDeleted 
           </div>
         </div>
       )}
+
+      <section className="mt-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-900">Account security</h2>
+        <p className="mt-1 text-sm text-slate-500">Changing your password signs out all active sessions.</p>
+        <form onSubmit={handleChangePassword} className="mt-4 grid gap-3 sm:grid-cols-2">
+          <input name="currentPassword" type="password" autoComplete="current-password" required placeholder="Current password" className="rounded-lg border border-slate-200 px-4 py-3 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" />
+          <input name="newPassword" type="password" autoComplete="new-password" minLength={12} maxLength={72} required placeholder="New password (12+ characters)" className="rounded-lg border border-slate-200 px-4 py-3 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" />
+          <input name="confirmPassword" type="password" autoComplete="new-password" minLength={12} maxLength={72} required placeholder="Confirm new password" className="rounded-lg border border-slate-200 px-4 py-3 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" />
+          <div className="flex items-center sm:justify-end"><button disabled={isChangingPassword} className="rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60">{isChangingPassword ? "Updating…" : "Change password"}</button></div>
+        </form>
+      </section>
     </div>
   );
 }

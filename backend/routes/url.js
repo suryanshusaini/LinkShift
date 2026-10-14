@@ -1,117 +1,58 @@
 const express = require("express");
 const crypto = require("crypto");
 const rateLimit = require("express-rate-limit");
-const jwt = require("jsonwebtoken");
 const Url = require("../models/Url");
+const { optionalSession, sessionAuth } = require("../middleware/sessionAuth");
+const { validateUrl } = require("../utils/validateUrl");
+const { validateAlias } = require("../validators/alias");
 
 const router = express.Router();
+const guestLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, standardHeaders: true, legacyHeaders: false, message: { error: "Guest limit reached. Please log in to create more links." }, skip: (req) => Boolean(req.userId) });
+const accountLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false, message: { error: "Account limit reached. Please try again later." }, skip: (req) => !req.userId });
 
-const optionalAuth = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    const token = authHeader.split(" ")[1];
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.userId = decoded.userId || decoded.id;
-    } catch (error) {
-      console.error("Invalid token");
-    }
+const createShortId = async () => {
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const candidate = crypto.randomBytes(5).toString("base64url").slice(0, 7);
+    if (!(await Url.exists({ shortId: candidate }))) return candidate;
   }
-  next();
+  throw new Error("Unable to allocate a unique short ID.");
 };
 
-const guestLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  message: {
-    error: "Guest limit reached. Please log in to create more links.",
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  skip: (req) => req.userId !== undefined,
-});
-
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: {
-    error: "Account limit reached. Please try again after 15 minutes.",
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: (req) => req.userId,
-  skip: (req) => req.userId === undefined,
-});
-
-router.post(
-  "/shorten",
-  optionalAuth,
-  guestLimiter,
-  authLimiter,
-  async (req, res) => {
-    try {
-      const { originalUrl, customAlias } = req.body;
-      let shortId;
-
-      if (customAlias && customAlias.trim() !== "") {
-        const existingUrl = await Url.findOne({ shortId: customAlias });
-        if (existingUrl) {
-          return res
-            .status(400)
-            .json({ error: "This custom alias is already taken." });
-        }
-        shortId = customAlias;
-      } else {
-        shortId = crypto.randomBytes(3).toString("hex");
-      }
-
-      const newUrl = new Url({
-        originalUrl,
-        shortId,
-        userId: req.userId || null,
-      });
-
-      await newUrl.save();
-      res.json(newUrl);
-    } catch (error) {
-      res.status(500).json({ error: "Server error" });
-    }
-  },
-);
-
-router.get("/urls", optionalAuth, async (req, res) => {
-  if (!req.userId) {
-    return res.status(401).json({ error: "Unauthorized" });
+router.post("/shorten", optionalSession, guestLimiter, accountLimiter, async (req, res) => {
+  try {
+    const checkedUrl = await validateUrl(req.body.originalUrl);
+    if (!checkedUrl.valid) return res.status(400).json({ error: checkedUrl.message });
+    const checkedAlias = validateAlias(req.body.customAlias);
+    if (!checkedAlias.valid) return res.status(400).json({ error: checkedAlias.message });
+    if (checkedAlias.value && await Url.exists({ shortId: checkedAlias.value })) return res.status(409).json({ error: "This custom alias is already taken." });
+    const shortId = checkedAlias.value || await createShortId();
+    const newUrl = await Url.create({ originalUrl: checkedUrl.value, shortId, userId: req.userId || null });
+    return res.status(201).json(newUrl);
+  } catch (error) {
+    if (error?.code === 11000) return res.status(409).json({ error: "That short ID is already in use. Try again." });
+    console.error("Shorten error:", error.message);
+    return res.status(500).json({ error: "Server error while creating the short link." });
   }
+});
 
+router.get("/urls", sessionAuth, async (req, res) => {
   try {
     const urls = await Url.find({ userId: req.userId }).sort({ createdAt: -1 });
-    res.json(urls);
+    return res.json(urls);
   } catch (error) {
-    res.status(500).json({ error: "Server error" });
+    console.error("List URLs error:", error.message);
+    return res.status(500).json({ error: "Server error." });
   }
 });
 
-router.delete("/:id", optionalAuth, async (req, res) => {
-  if (!req.userId) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-
+router.delete("/:id", sessionAuth, async (req, res) => {
   try {
-    const deletedUrl = await Url.findOneAndDelete({
-      _id: req.params.id,
-      userId: req.userId,
-    });
-
-    if (!deletedUrl) {
-      return res
-        .status(404)
-        .json({ error: "URL not found or unauthorized access." });
-    }
-
-    res.json({ message: "URL deleted successfully" });
+    const deletedUrl = await Url.findOneAndDelete({ _id: req.params.id, userId: req.userId });
+    if (!deletedUrl) return res.status(404).json({ error: "URL not found or unauthorized access." });
+    return res.json({ message: "URL deleted successfully" });
   } catch (error) {
-    res.status(500).json({ error: "Server error" });
+    console.error("Delete URL error:", error.message);
+    return res.status(500).json({ error: "Server error." });
   }
 });
 
